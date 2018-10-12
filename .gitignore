@@ -1,0 +1,12 @@
+bin/*
+obj/*
+.idea/*
+.vs/*
+ddlc/.idea/*
+ddlc/bin/*
+ddlc/obj/*
+
+bin/
+
+ddlc/obj/*
+libddl/obj/*

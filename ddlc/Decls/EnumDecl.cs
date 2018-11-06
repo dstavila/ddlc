@@ -13,7 +13,6 @@ namespace ddlc
             public string Value;
         }
         
-        public string Name;
         private EnumDeclarationSyntax Node;
         private List<EnumItem> Fields = new List<EnumItem>();
         
@@ -45,7 +44,6 @@ namespace ddlc
             sb.AppendLine(tab + "{");
             foreach (var f in Fields)
             {
-                string msg = null;
                 if (!string.IsNullOrEmpty(f.Value))
                     sb.AppendFormat(tab + "    {0} = {1},\n", f.Name, f.Value);
                 else

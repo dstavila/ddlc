@@ -108,6 +108,20 @@ namespace ddlc
         }
     }
 
+    public class rCommandArg
+    {
+        public string Name;
+        public EType Type;
+        public EArrayType ArrayType;
+        public string Value;
+    }
+    public class rCommand
+    {
+        public string Name;
+        public uint NameHash;
+        public List<rCommandArg> Args = new List<rCommandArg>();
+    }
+
     public class rNamespace
     {
         public string Name;
@@ -152,7 +166,41 @@ namespace ddlc
 
             return EType.UNKNOWN;
         }
+        
+        public static EType StringToDDLType(string str, DDLAssembly asm)
+        {
+            if (str == "float" || str == "f32") return EType.FLOAT32;
+            if (str == "double" || str == "f64") return EType.FLOAT64;
+            if (str == "byte" || str == "i8") return EType.INT8;
+            if (str == "sbyte" || str == "u8") return EType.UINT8;
+            if (str == "short" || str == "i16") return EType.INT16;
+            if (str == "ushort" || str == "u16") return EType.UINT16;
+            if (str == "int" || str == "i32") return EType.INT32;
+            if (str == "uint" || str == "u32") return EType.UINT32;
+            if (str == "long" || str == "i64") return EType.INT64;
+            if (str == "ulong" || str == "u64") return EType.UINT64;
+            if (str == "float2" || str == "Vector2") return EType.VECTOR2;
+            if (str == "float3" || str == "Vector3") return EType.VECTOR3;
+            if (str == "float4" || str == "Vector4") return EType.VECTOR4;
+            if (str == "Quaternion") return EType.Quaternion;
+            if (str == "bool") return EType.BOOLEAN;
+            if (str == "string") return EType.STRING;
+//            foreach (var s in selects)
+//            {
+//                if (s.Name == str)
+//                    return EType.SELECT;
+//            }
+//
+//            foreach (var s in structs)
+//            {
+//                if (s.Name == str)
+//                    return EType.STRUCT;
+//            }
 
+            return EType.UNKNOWN;
+        }
+
+        
         public static string DDLTypeToCSharpType(EType t, string typeName)
         {
             if (t == EType.UINT8)  return "ubyte";

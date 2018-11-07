@@ -31,7 +31,7 @@ namespace ddlc
                 var field = new EnumItem();
                 field.Name = mem.Identifier.Text;
                 if (mem.EqualsValue != null)
-                    field.Value = mem.EqualsValue.ToString();
+                    field.Value = mem.EqualsValue.Value.ToString();
                 Fields.Add(field);
             }
         }

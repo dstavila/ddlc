@@ -87,34 +87,30 @@ namespace ddlc
             foreach (var d in Decls)
                 d.bGenerated = false;
 
-            var unityGen = new Generator.UnityGen();
-            var sb = new StringBuilder();
-            foreach (var n in NamespaceDecls)
-                unityGen.Generate(n, "", sb);
-            foreach (var d in Decls)
-                unityGen.Generate(d, "", sb);
-            
-            Console.WriteLine(sb.ToString());
-            
-//            var filename = Path.GetFileNameWithoutExtension(ctx.);
-//            if (langArg == "cs")
-//            {
-//                var filename = Path.GetFileNameWithoutExtension(srcArg) + "_generated.cs";
-//                UnityGen.Generate(outArg, filename, walker.Namespaces, walker.Selects, walker.Structs);
-//            }
-//            else if (langArg == "cpp")
-//            {
-//                var cppfile = Path.GetFileNameWithoutExtension(srcArg) + "_generated";
-//                CPPGen.Generate(outArg, cppfile, walker.Namespaces, walker.Selects, walker.Structs);
-//            }
-//            else
-//            {
-//                var filename = Path.GetFileNameWithoutExtension(srcArg) + "_generated.cs";
-//                UnityGen.Generate(outArg, filename, walker.Namespaces, walker.Selects, walker.Structs);
-//                
-//                var cppfile = Path.GetFileNameWithoutExtension(srcArg) + "_generated";
-//                CPPGen.Generate(outArg, cppfile, walker.Namespaces, walker.Selects, walker.Structs);
-//            }
+            string filename = null;
+            var attr = File.GetAttributes(ctx.OutputPath);
+            if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
+                filename = Path.Combine(ctx.OutputPath, Path.GetFileName(ctx.OutputPath) + "_generated");
+                
+            if (string.IsNullOrEmpty(ctx.language) || ctx.language == "cs")
+            {
+                var csfilename = filename + ".cs";
+                var unityGen = new Generator.UnityGen();
+                var sb = new StringBuilder();
+                unityGen.GenerateHeader(sb);
+                foreach (var n in NamespaceDecls)
+                    unityGen.Generate(n, "", sb);
+                foreach (var d in Decls)
+                    unityGen.Generate(d, "", sb);
+                Console.WriteLine(sb.ToString());
+                File.WriteAllText(csfilename, sb.ToString());
+            }
+
+            if (string.IsNullOrEmpty(ctx.language) || ctx.language == "cpp")
+            {
+                var headerFile = filename + ".h";
+                var sourceFile = filename + ".cpp";
+            }
         }
         
 

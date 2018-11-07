@@ -5,6 +5,20 @@ namespace ddlc.Generator
 {
     public class UnityGen : IGenerator
     {
+        public void GenerateHeader(StringBuilder sb)
+        {
+            sb.AppendLine("//===----------------------------------------------------------------------===//");
+            sb.AppendLine("//                                                                              ");
+            sb.AppendLine("//  vim: ft=cs tw=80                                                            ");
+            sb.AppendLine("//                                                                              ");
+            sb.AppendLine("//  DDL Generated code, do not modify directly.                                 ");
+            sb.AppendLine("//                                                                              ");
+            sb.AppendLine("//===----------------------------------------------------------------------===//");
+            sb.AppendLine("using System;");
+            sb.AppendLine("using System.Collections.Generic;");
+            sb.Append("\n\n");
+        }
+        
         public void Generate(DDLDecl decl, string tab, StringBuilder sb)
         {
             var type = decl.GetType();

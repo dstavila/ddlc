@@ -67,24 +67,20 @@ namespace ddlc
         public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
         {
             base.VisitMethodDeclaration(node);
-//            foreach (var attrList in node.AttributeLists)
-//            {
-//                foreach (var attr in attrList.Attributes)
-//                {
-//                    var name = (IdentifierNameSyntax)attr.Name;
-//                    var id = name.Identifier;
-//                    if (id.Text == "Command")
-//                    {
-//                        var cmd = new rCommand
-//                        {
-//                            Name = node.Identifier.Text, 
-//                            NameHash = MurmurHash2.Hash(node.Identifier.Text)
-//                        };
-//                        Command.ParseCommand(node, ref cmd);
-//                        Commands.Add(cmd);
-//                    }
-//                }
-//            }
+            foreach (var attrList in node.AttributeLists)
+            {
+                foreach (var attr in attrList.Attributes)
+                {
+                    var name = (IdentifierNameSyntax)attr.Name;
+                    var id = name.Identifier;
+                    if (id.Text == "Command")
+                    {
+                        var decl = new MethodDecl(node);
+                        decl.SourceFilepath = _sourceFile;
+                        _assembly.AppendMethod(decl);
+                    }
+                }
+            }
         }
     }
 }

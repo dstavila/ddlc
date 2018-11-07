@@ -45,6 +45,7 @@ namespace ddlc
         public List<ClassDecl> ClassDecls = new List<ClassDecl>();
         public List<StructDecl> StructDecls = new List<StructDecl>();
         public List<EnumDecl> EnumDecls = new List<EnumDecl>();
+        public List<MethodDecl> MethodDecls = new List<MethodDecl>();
         
         
 
@@ -66,6 +67,11 @@ namespace ddlc
         public void AppendEnum(EnumDecl decl)
         {
             EnumDecls.Add(decl);
+            Decls.Add(decl);
+        }
+        public void AppendMethod(MethodDecl decl)
+        {
+            MethodDecls.Add(decl);
             Decls.Add(decl);
         }
         
@@ -107,8 +113,9 @@ namespace ddlc
                     unityGen.Generate(n, "", sb);
                 foreach (var d in Decls)
                     unityGen.Generate(d, "", sb);
+                unityGen.GenerateCommands(MethodDecls, "", sb);
                 Console.WriteLine(sb.ToString());
-//                File.WriteAllText(csfilename, sb.ToString());
+                File.WriteAllText(csfilename, sb.ToString());
             }
 
             if (string.IsNullOrEmpty(ctx.language) || ctx.language == "cpp")
@@ -153,6 +160,11 @@ namespace ddlc
                 var rr = node as StructDeclarationSyntax;
                 nodeName = rr.Identifier.ToString();
             }
+            if (kind == SyntaxKind.ClassDeclaration)
+            {
+                var rr = node as ClassDeclarationSyntax;
+                nodeName = rr.Identifier.ToString();
+            }
             if (kind == SyntaxKind.NamespaceDeclaration)
             {
                 var rr = node as NamespaceDeclarationSyntax;
@@ -161,6 +173,11 @@ namespace ddlc
             if (kind == SyntaxKind.EnumDeclaration)
             {
                 var rr = node as EnumDeclarationSyntax;
+                nodeName = rr.Identifier.ToString();
+            }
+            if (kind == SyntaxKind.MethodDeclaration)
+            {
+                var rr = node as MethodDeclarationSyntax;
                 nodeName = rr.Identifier.ToString();
             }
             
@@ -173,6 +190,12 @@ namespace ddlc
                     if (nodeName == ds.Identifier.ToString())
                         return d;
                 }
+                if (d.sNode.Kind() == SyntaxKind.ClassDeclaration)
+                {
+                    var ds = d.sNode as ClassDeclarationSyntax;
+                    if (nodeName == ds.Identifier.ToString())
+                        return d;
+                }
                 else if (d.sNode.Kind() == SyntaxKind.NamespaceDeclaration)
                 {
                     var ds = d.sNode as NamespaceDeclarationSyntax;
@@ -182,6 +205,12 @@ namespace ddlc
                 else if (d.sNode.Kind() == SyntaxKind.EnumDeclaration)
                 {
                     var ds = d.sNode as EnumDeclarationSyntax;
+                    if (nodeName == ds.Identifier.ToString())
+                        return d;
+                }
+                else if (d.sNode.Kind() == SyntaxKind.MethodDeclaration)
+                {
+                    var ds = d.sNode as MethodDeclarationSyntax;
                     if (nodeName == ds.Identifier.ToString())
                         return d;
                 }

@@ -1,5 +1,8 @@
 namespace DDL
 {
+	[Command] void Testo(bool flag, int val);
+	
+
 	[Select]
 	enum ETesto
 	{

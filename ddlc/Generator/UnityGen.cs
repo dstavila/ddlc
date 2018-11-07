@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Text;
 
 
@@ -5,6 +8,9 @@ namespace ddlc.Generator
 {
     public class UnityGen
     {
+        private const string t1 = "    ";
+        
+        
         public void GenerateHeader(StringBuilder sb)
         {
             sb.AppendLine("//===----------------------------------------------------------------------===//");
@@ -30,6 +36,55 @@ namespace ddlc.Generator
                 ClassGen(decl as ClassDecl, tab, sb);
             else if (type == typeof(EnumDecl))
                 EnumGen(decl as EnumDecl, tab, sb);
+        }
+
+        public void GenerateCommands(List<MethodDecl> decls, string tab, StringBuilder sb)
+        {
+            sb.AppendLine(tab + "public enum ECommands : uint");
+            sb.AppendLine(tab + "{");
+            sb.AppendFormat(tab + t1 + "kUnknown = 0,\n");
+            foreach (var f in decls)
+            {
+                var item = $"ECommands.{f.Name}";
+                sb.AppendFormat(tab + t1 + "{0} = {1},\n", f.Name, MurmurHash2.Hash(item));
+            }
+            sb.AppendLine(tab + "}");
+            var base_cmd_str = @"
+public class BaseCommand
+{
+    public int TotalSteps = 1;
+    public int Step = 0;
+    public ECommands Id = ECommands.kUnknown;
+}";
+            sb.AppendLine(base_cmd_str);
+            foreach (var decl in decls)
+            {
+                sb.AppendLine(tab + "[Serializable]");
+                sb.AppendFormat(tab + "public class {0} : BaseCommand\n", decl.Name);
+                sb.AppendLine(tab + "{");
+                foreach (var p in decl.Params)
+                {
+                    sb.AppendFormat(tab + t1 + "public {0} {1};\n", p.sType, p.Name);
+                }
+                sb.AppendFormat(tab + t1 + "public {0}()\n", decl.Name);
+                sb.AppendLine(tab + t1 + "{");
+                sb.AppendFormat(tab + t1 + t1 + "id = ECommands.{0};\n", decl.Name);
+                sb.AppendFormat(tab + t1 + t1 + "name = \"ECommands.{0}\";\n", decl.Name);
+                sb.AppendLine(tab + t1 + "}");
+                
+                sb.AppendFormat(tab + t1 + "public {0}(", decl.Name);
+                foreach (var p in decl.Params)
+                    sb.AppendFormat("{0} _{1} ", p.sType, p.Name);
+                sb.AppendLine(")");
+                sb.AppendLine(tab + t1 + "{");
+                foreach (var p in decl.Params)
+                    sb.AppendFormat(tab + t1 + t1 + "{0} = _{1};\n", p.Name, p.Name);
+                sb.AppendFormat(tab + t1 + t1 + "id = ECommands.{0};\n", decl.Name);
+                sb.AppendFormat(tab + t1 + t1 + "name = \"ECommands.{0}\";\n", decl.Name);
+                sb.AppendLine(tab + t1 + "}");
+                
+                sb.AppendLine(tab + "}");
+            }
         }
 
 
@@ -74,6 +129,10 @@ namespace ddlc.Generator
             foreach (var child in decl.Childs)
             {
                 Generate(child, tab + "    ", sb);
+            }
+            foreach (var mem in decl.Fields)
+            {
+                AggregateFieldGen(mem, tab + "    ", sb);
             }
             sb.AppendLine(tab + "}");
         }

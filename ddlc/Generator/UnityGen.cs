@@ -3,7 +3,7 @@ using System.Text;
 
 namespace ddlc.Generator
 {
-    public class UnityGen : IGenerator
+    public class UnityGen
     {
         public void GenerateHeader(StringBuilder sb)
         {

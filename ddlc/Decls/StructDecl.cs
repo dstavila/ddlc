@@ -37,7 +37,7 @@ namespace ddlc
                 {
                     var ff = f.TypeSyntax as IdentifierNameSyntax;
                     f.sType = ff.Identifier.ToString();
-                    f.Type = EType.SELECT;
+                    f.Type = EType.STRUCT;
                 }
             }
         }

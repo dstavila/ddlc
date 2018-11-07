@@ -20,6 +20,8 @@ namespace ddlc
         public DDLDecl Parent;
         public string Name;
         public bool bGenerated = false;
+        public bool bHeaderGenerated = false;
+        public bool bSourceGenerated = false;
         public List<DDLDecl> Childs = new List<DDLDecl>();
         
 
@@ -40,9 +42,9 @@ namespace ddlc
     {
         public List<DDLDecl> Decls = new List<DDLDecl>();
         private readonly List<NamespaceDecl> NamespaceDecls = new List<NamespaceDecl>();
-        private readonly List<ClassDecl> ClassDecls = new List<ClassDecl>();
-        private readonly List<StructDecl> StructDecls = new List<StructDecl>();
-        private readonly List<EnumDecl> EnumDecls = new List<EnumDecl>();
+        public List<ClassDecl> ClassDecls = new List<ClassDecl>();
+        public List<StructDecl> StructDecls = new List<StructDecl>();
+        public List<EnumDecl> EnumDecls = new List<EnumDecl>();
         
         
 
@@ -84,17 +86,20 @@ namespace ddlc
         
         public void Generate(GeneratorContext ctx)
         {
-            foreach (var d in Decls)
-                d.bGenerated = false;
-
             string filename = null;
+            string fullFilename = null;
             var attr = File.GetAttributes(ctx.OutputPath);
             if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
-                filename = Path.Combine(ctx.OutputPath, Path.GetFileName(ctx.OutputPath) + "_generated");
+            {
+                filename = Path.GetFileName(ctx.OutputPath) + "_generated";
+                fullFilename = Path.Combine(ctx.OutputPath, filename);
+            }
                 
             if (string.IsNullOrEmpty(ctx.language) || ctx.language == "cs")
             {
-                var csfilename = filename + ".cs";
+                foreach (var d in Decls)
+                    d.bGenerated = false;
+                var csfilename = fullFilename + ".cs";
                 var unityGen = new Generator.UnityGen();
                 var sb = new StringBuilder();
                 unityGen.GenerateHeader(sb);
@@ -103,13 +108,23 @@ namespace ddlc
                 foreach (var d in Decls)
                     unityGen.Generate(d, "", sb);
                 Console.WriteLine(sb.ToString());
-                File.WriteAllText(csfilename, sb.ToString());
+//                File.WriteAllText(csfilename, sb.ToString());
             }
 
             if (string.IsNullOrEmpty(ctx.language) || ctx.language == "cpp")
             {
+                foreach (var d in Decls)
+                    d.bGenerated = false;
                 var headerFile = filename + ".h";
                 var sourceFile = filename + ".cpp";
+                var cppGen = new Generator.CPPGen(ClassDecls, StructDecls);
+                var sbh = new StringBuilder();
+                cppGen.GenerateHeader(sbh, NamespaceDecls, Decls);
+                Console.WriteLine(sbh.ToString());
+                
+                var sbs = new StringBuilder();
+                cppGen.GenerateSource(sbs, headerFile ,NamespaceDecls, Decls);
+                Console.WriteLine(sbs.ToString());
             }
         }
         

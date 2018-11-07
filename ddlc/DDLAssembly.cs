@@ -28,8 +28,6 @@ namespace ddlc
         public virtual void ParseParent(List<DDLDecl> decls) { }
         public virtual void ParsePackage() { }
         public virtual void ParseType(DDLAssembly asm) { }
-
-        public virtual void UnityGen(string tab, StringBuilder sb) { }
     }
 
 
@@ -89,11 +87,12 @@ namespace ddlc
             foreach (var d in Decls)
                 d.bGenerated = false;
 
+            var unityGen = new Generator.UnityGen();
             var sb = new StringBuilder();
             foreach (var n in NamespaceDecls)
-                n.UnityGen("", sb);
+                unityGen.Generate(n, "", sb);
             foreach (var d in Decls)
-                d.UnityGen("", sb);
+                unityGen.Generate(d, "", sb);
             
             Console.WriteLine(sb.ToString());
             

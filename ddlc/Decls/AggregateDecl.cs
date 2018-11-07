@@ -17,29 +17,6 @@ namespace ddlc
         public string sType;
 
         public TypeSyntax TypeSyntax = null;
-
-
-        public void UnityGen(string tab, StringBuilder sb)
-        {
-            string msg = null;
-            var type = Converter.DDLTypeToCSharpType(Type, sType);
-            if (ArrayType == EArrayType.SCALAR)
-            {
-                if (string.IsNullOrEmpty(Value))
-                    msg = string.Format("public {0} {1};\n", type, Name);
-                else 
-                    msg = string.Format("public {0} {1} = {2};\n", type, Name, Value);
-            }
-            if (ArrayType == EArrayType.DYNAMIC)
-                msg = string.Format("public {0}[] {1};\n", type, Name);
-            if (ArrayType == EArrayType.LIST)
-                msg = string.Format("public List<{0}> {1} = new List<{0}>();\n", type, Name);
-            if (ArrayType == EArrayType.FIXED)
-                msg = string.Format("public {0}[{2}] {1};\n", type, Name);
-            
-            msg = tab + msg;
-            sb.Append(msg);
-        }
     }
     public abstract class AggregateDecl : DDLDecl
     {

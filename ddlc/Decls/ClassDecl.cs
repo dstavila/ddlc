@@ -20,19 +20,5 @@ namespace ddlc
             foreach (var m in Node.Members)
                 parse_fields(m);
         }
-        
-        public override void UnityGen(string tab, StringBuilder sb)
-        {
-            if (bGenerated) return;
-            bGenerated = true;
-            sb.AppendLine(tab + "[Serializable]");
-            sb.AppendFormat(tab + "public class {0}\n", Name);
-            sb.AppendLine(tab + "{");
-            foreach (var child in Childs)
-            {
-                child.UnityGen(tab + "    ", sb);
-            }
-            sb.AppendLine(tab + "}");
-        }
     }
 }

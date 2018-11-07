@@ -41,23 +41,5 @@ namespace ddlc
                 }
             }
         }
-        
-        public override void UnityGen(string tab, StringBuilder sb)
-        {
-            if (bGenerated) return;
-            bGenerated = true;
-            sb.AppendLine(tab + "[Serializable]");
-            sb.AppendFormat(tab + "public struct {0}\n", Name);
-            sb.AppendLine(tab + "{");
-            foreach (var child in Childs)
-            {
-                child.UnityGen(tab + "    ", sb);
-            }
-            foreach (var mem in Fields)
-            {
-                mem.UnityGen(tab + "    ", sb);
-            }
-            sb.AppendLine(tab + "}");
-        }
     }
 }

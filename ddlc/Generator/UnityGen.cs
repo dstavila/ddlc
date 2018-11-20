@@ -129,10 +129,7 @@ namespace ddlc.Generator
             sb.AppendFormat(tab + t1 + t1 + "kUnknown = 0,\n");
             foreach (var f in decls)
             {
-                var name = f.Name;
-                var extra = Utils.ExtraCommandNamespace(f.NamespaceChain);
-                if (extra != null)
-                    name = string.Format("{0}_{1}", extra, f.Name);
+                var name = f.PrettyName;
                 var item = $"ECommands.{name}";
                 sb.AppendFormat(tab + t1 + t1 + "{0} = {1},\n", name, MurmurHash2.Hash(item));
             }
@@ -186,8 +183,8 @@ namespace ddlc.Generator
 
                 sb.AppendFormat(tab + t1 + "public {0}()\n", decl.Name);
                 sb.AppendLine(tab + t1 + "{");
-                sb.AppendFormat(tab + t1 + t1 + "Id = ECommands.{0};\n", decl.Name);
-                sb.AppendFormat(tab + t1 + t1 + "Name = \"ECommands.{0}\";\n", decl.Name);
+                sb.AppendFormat(tab + t1 + t1 + "Id = ECommands.{0};\n", decl.PrettyName);
+                sb.AppendFormat(tab + t1 + t1 + "Name = \"ECommands.{0}\";\n", decl.PrettyName);
                 if (decl.TotalSteps != 1)
                     sb.AppendFormat(tab + t1 + t1 + "TotalSteps = {0};\n", decl.TotalSteps);
                 sb.AppendLine(tab + t1 + "}");
@@ -215,8 +212,8 @@ namespace ddlc.Generator
                     sb.AppendLine(tab + t1 + "{");
                     foreach (var p in decl.Params)
                         sb.AppendFormat(tab + t1 + t1 + "{0} = _{1};\n", p.Name, p.Name);
-                    sb.AppendFormat(tab + t1 + t1 + "Id = ECommands.{0};\n", decl.Name);
-                    sb.AppendFormat(tab + t1 + t1 + "Name = \"ECommands.{0}\";\n", decl.Name);
+                    sb.AppendFormat(tab + t1 + t1 + "Id = ECommands.{0};\n", decl.PrettyName);
+                    sb.AppendFormat(tab + t1 + t1 + "Name = \"ECommands.{0}\";\n", decl.PrettyName);
                     if (decl.TotalSteps != 1)
                         sb.AppendFormat(tab + t1 + t1 + "TotalSteps = {0};\n", decl.TotalSteps);
                     sb.AppendLine(tab + t1 + "}");

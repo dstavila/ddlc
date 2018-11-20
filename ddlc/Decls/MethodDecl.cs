@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 
@@ -21,6 +22,20 @@ namespace ddlc
             TotalSteps = totalSteps;
         }
 
+        public string PrettyName
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(NamespaceChain))
+                    return Name;
+                
+                var extra = Utils.ExtraCommandNamespace(NamespaceChain);
+                if (extra != null)
+                    return string.Format("{0}_{1}", extra, Name);
+                return Name;
+            }
+        }
+        
         public override void ParseDecl() { }
         public override void ParseType(DDLAssembly asm)
         {

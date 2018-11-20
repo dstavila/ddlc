@@ -182,8 +182,22 @@ namespace ddlc.Generator
                 if (decl.Params.Count > 0)
                 {
                     sb.AppendFormat(tab + t1 + "public {0}(", decl.Name);
-                    foreach (var p in decl.Params)
-                        sb.AppendFormat("{0} _{1} ", p.sType, p.Name);
+                    var len = decl.Params.Count;
+                    for (var i = 0; i < len - 1; ++i)
+                    {
+                        var p = decl.Params[i];
+                        if (string.IsNullOrEmpty(p.Value))
+                            sb.AppendFormat("{0} _{1}, ", p.sType, p.Name);
+                        else 
+                            sb.AppendFormat("{0} _{1} = {2}, ", p.sType, p.Name, p.Value);
+                    }
+                    {
+                        var p = decl.Params[len - 1];
+                        if (string.IsNullOrEmpty(p.Value))
+                            sb.AppendFormat("{0} _{1}", p.sType, p.Name);
+                        else 
+                            sb.AppendFormat("{0} _{1} = {2}", p.sType, p.Name, p.Value);
+                    }
                     sb.AppendLine(")");
                     sb.AppendLine(tab + t1 + "{");
                     foreach (var p in decl.Params)

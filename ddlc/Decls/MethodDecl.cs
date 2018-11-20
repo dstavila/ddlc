@@ -30,6 +30,8 @@ namespace ddlc
                     param.Name = par.Identifier.Text;
                     param.sType = par.Type.ToString();
                     param.Type = Converter.StringToDDLType(param.sType, asm);
+                    if (par.Default != null)
+                        param.Value = par.Default.Value.ToString();
                     Params.Add(param);
                 }
             }

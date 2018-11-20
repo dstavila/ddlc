@@ -117,23 +117,52 @@ namespace ddlc.Generator
 
         public void GenerateCommands(List<MethodDecl> decls, string tab, StringBuilder sb)
         {
-            sb.AppendLine(tab + "public enum ECommands : uint");
+            sb.AppendLine(tab + "namespace DDL");
             sb.AppendLine(tab + "{");
-            sb.AppendFormat(tab + t1 + "kUnknown = 0,\n");
+            sb.AppendLine(tab + t1 + "public enum ECommands : uint");
+            sb.AppendLine(tab + t1 + "{");
+            sb.AppendFormat(tab + t1 + t1 + "kUnknown = 0,\n");
             foreach (var f in decls)
             {
                 var item = $"ECommands.{f.Name}";
-                sb.AppendFormat(tab + t1 + "{0} = {1},\n", f.Name, MurmurHash2.Hash(item));
+                sb.AppendFormat(tab + t1 + t1 + "{0} = {1},\n", f.Name, MurmurHash2.Hash(item));
             }
-            sb.AppendLine(tab + "}");
+            sb.AppendLine(tab + t1 + "}");
             var base_cmd_str = @"
-public class BaseCommand
-{
-    public int TotalSteps = 1;
-    public int Step = 0;
-    public ECommands Id = ECommands.kUnknown;
-}";
+    public class BaseCommand
+    {
+        public int TotalSteps = 1;
+        public int Step = 0;
+        public ECommands Id = ECommands.kUnknown;
+        public string Name = null; // TODO(D1): IF DEBUG
+    }";
             sb.AppendLine(base_cmd_str);
+            sb.AppendLine(tab + "}");
+            var dictionary = new Dictionary<string, List<MethodDecl>>();
+            var nonamespace = new List<MethodDecl>();
+            foreach(var d in decls)
+            {
+                if (string.IsNullOrEmpty(d.NamespaceChain))
+                {
+                    nonamespace.Add(d);
+                    continue;
+                }
+                if (!dictionary.ContainsKey(d.NamespaceChain))
+                    dictionary[d.NamespaceChain] = new List<MethodDecl>();
+                dictionary[d.NamespaceChain].Add(d);
+            }
+            foreach (var kvp in dictionary)
+            {
+                sb.AppendFormat("namespace {0}\n", kvp.Key);
+                sb.AppendLine("{");
+                dump_methods_into_namespace(kvp.Value, tab + t1, sb);
+                sb.AppendLine("}");
+            }
+            dump_methods_into_namespace(nonamespace, tab, sb);
+        }
+
+        private static void dump_methods_into_namespace(List<MethodDecl> decls, string tab, StringBuilder sb)
+        {
             foreach (var decl in decls)
             {
                 sb.AppendLine(tab + "[Serializable]");
@@ -143,23 +172,27 @@ public class BaseCommand
                 {
                     sb.AppendFormat(tab + t1 + "public {0} {1};\n", p.sType, p.Name);
                 }
+
                 sb.AppendFormat(tab + t1 + "public {0}()\n", decl.Name);
                 sb.AppendLine(tab + t1 + "{");
-                sb.AppendFormat(tab + t1 + t1 + "id = ECommands.{0};\n", decl.Name);
-                sb.AppendFormat(tab + t1 + t1 + "name = \"ECommands.{0}\";\n", decl.Name);
+                sb.AppendFormat(tab + t1 + t1 + "Id = ECommands.{0};\n", decl.Name);
+                sb.AppendFormat(tab + t1 + t1 + "Name = \"ECommands.{0}\";\n", decl.Name);
                 sb.AppendLine(tab + t1 + "}");
-                
-                sb.AppendFormat(tab + t1 + "public {0}(", decl.Name);
-                foreach (var p in decl.Params)
-                    sb.AppendFormat("{0} _{1} ", p.sType, p.Name);
-                sb.AppendLine(")");
-                sb.AppendLine(tab + t1 + "{");
-                foreach (var p in decl.Params)
-                    sb.AppendFormat(tab + t1 + t1 + "{0} = _{1};\n", p.Name, p.Name);
-                sb.AppendFormat(tab + t1 + t1 + "id = ECommands.{0};\n", decl.Name);
-                sb.AppendFormat(tab + t1 + t1 + "name = \"ECommands.{0}\";\n", decl.Name);
-                sb.AppendLine(tab + t1 + "}");
-                
+
+                if (decl.Params.Count > 0)
+                {
+                    sb.AppendFormat(tab + t1 + "public {0}(", decl.Name);
+                    foreach (var p in decl.Params)
+                        sb.AppendFormat("{0} _{1} ", p.sType, p.Name);
+                    sb.AppendLine(")");
+                    sb.AppendLine(tab + t1 + "{");
+                    foreach (var p in decl.Params)
+                        sb.AppendFormat(tab + t1 + t1 + "{0} = _{1};\n", p.Name, p.Name);
+                    sb.AppendFormat(tab + t1 + t1 + "Id = ECommands.{0};\n", decl.Name);
+                    sb.AppendFormat(tab + t1 + t1 + "Name = \"ECommands.{0}\";\n", decl.Name);
+                    sb.AppendLine(tab + t1 + "}");
+                }
+
                 sb.AppendLine(tab + "}");
             }
         }

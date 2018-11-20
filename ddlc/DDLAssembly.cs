@@ -24,6 +24,7 @@ namespace ddlc
         public bool bSourceGenerated = false;
         public List<DDLDecl> Childs = new List<DDLDecl>();
         
+        public string NamespaceChain = null;
 
         public abstract void ParseDecl();
 
@@ -106,7 +107,7 @@ namespace ddlc
                 foreach (var d in Decls)
                     d.bGenerated = false;
                 var unityGen = new Generator.UnityGen();
-                unityGen.DoGenerate(ctx.OutputPath, NamespaceDecls, Decls, MethodDecls);
+                unityGen.DoGenerate(ctx.OutputPath, NamespaceDecls, Decls, MethodDecls, ctx.Assembly);
 //                var csfilename = fullFilename + ".cs";
 //                var unityGen = new Generator.UnityGen();
 //                var sb = new StringBuilder();
@@ -153,7 +154,17 @@ namespace ddlc
             }
         }
 
-        private DDLDecl find_decl_by_syntax_node(SyntaxNode node)
+        public DDLDecl find_decl_by_name(string name)
+        {
+            foreach (var d in Decls)
+            {
+                if (d.Name == name)
+                    return d;
+            }
+            return null;
+        }
+
+        public DDLDecl find_decl_by_syntax_node(SyntaxNode node)
         {
             string nodeName = null;
             var kind = node.Kind();

@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Design;
 using System.IO;
 using System.Text;
+using Microsoft.CodeAnalysis;
 
 
 namespace ddlc.Generator
@@ -11,25 +11,43 @@ namespace ddlc.Generator
     {
         private const string t1 = "    ";
 
+        private List<string> nodes_to_using_strings(List<string> fieldTypes, DDLAssembly asm)
+        {
+            var list = new List<string>();
+            foreach (var n in fieldTypes)
+            {
+                var res = asm.find_decl_by_name(n);
+                if (res != null && !string.IsNullOrEmpty(res.NamespaceChain) && !list.Contains(res.NamespaceChain))
+                    list.Add(res.NamespaceChain);
+            }
+            return list;
+        }
 
         public void DoGenerate(
             string outputPath,
             List<NamespaceDecl> namespaceDecls, 
             List<DDLDecl> decls,
-            List<MethodDecl> methodDecls)
+            List<MethodDecl> methodDecls,
+            DDLAssembly asm
+            )
         {
             foreach (var n in namespaceDecls)
             {
+                var felds = new List<string>();
                 var sb = new StringBuilder();
-                GenerateHeader(sb);
-                Generate(n, "", sb);
+                Generate(n, "", sb, felds);
 
-                Console.WriteLine(sb.ToString());
+                var usings = nodes_to_using_strings(felds, asm);
+                var outer = new StringBuilder();
+                GenerateHeader(outer, usings);
+                outer.Append(sb);
+                Console.WriteLine(outer.ToString());
+                
                 
                 var name = n.Name;
                 name = name.Replace('.', '_');
                 var csfilename = Path.Combine(outputPath, name + "_generated.cs");
-                File.WriteAllText(csfilename, sb.ToString());
+                File.WriteAllText(csfilename, outer.ToString());
             }
 
             var todo = new List<DDLDecl>();
@@ -39,20 +57,24 @@ namespace ddlc.Generator
 
             if (todo.Count != 0)
             {
+                var fields = new List<string>();
                 var sb2 = new StringBuilder();
-                GenerateHeader(sb2);
                 foreach (var d in todo)
-                    Generate(d, "", sb2);
-                Console.WriteLine(sb2.ToString());
+                    Generate(d, "", sb2, fields);
                 
+                var usings = nodes_to_using_strings(fields, asm);
+                var outer = new StringBuilder();
+                GenerateHeader(outer, usings);
+                outer.Append(sb2);
+
                 var csfilename = Path.Combine(outputPath, "_generated.cs");
-                File.WriteAllText(csfilename, sb2.ToString());
+                File.WriteAllText(csfilename, outer.ToString());
             }
 
             if (methodDecls.Count != 0)
             {
                 var sb3 = new StringBuilder();
-                GenerateHeader(sb3);
+                GenerateHeader(sb3, null);
                 GenerateCommands(methodDecls, "", sb3);
                 Console.WriteLine(sb3.ToString());
                 
@@ -60,9 +82,8 @@ namespace ddlc.Generator
                 File.WriteAllText(csfilename, sb3.ToString());
             }
         }
-        
-        
-        public void GenerateHeader(StringBuilder sb)
+
+        public void GenerateHeader(StringBuilder sb, List<string> usings)
         {
             sb.AppendLine("//===----------------------------------------------------------------------===//");
             sb.AppendLine("//                                                                              ");
@@ -73,18 +94,23 @@ namespace ddlc.Generator
             sb.AppendLine("//===----------------------------------------------------------------------===//");
             sb.AppendLine("using System;");
             sb.AppendLine("using System.Collections.Generic;");
+            if (usings != null)
+            {
+                foreach (var u in usings)
+                    sb.AppendFormat("using {0};\n", u);
+            }
             sb.Append("\n\n");
         }
         
-        public void Generate(DDLDecl decl, string tab, StringBuilder sb)
+        public void Generate(DDLDecl decl, string tab, StringBuilder sb, List<string> usings)
         {
             var type = decl.GetType();
             if (type == typeof(NamespaceDecl))
-                NamespaceGen(decl as NamespaceDecl, tab, sb);
+                NamespaceGen(decl as NamespaceDecl, tab, sb, usings);
             else if (type == typeof(StructDecl))
-                StructGen(decl as StructDecl, tab, sb);
+                StructGen(decl as StructDecl, tab, sb, usings);
             else if (type == typeof(ClassDecl))
-                ClassGen(decl as ClassDecl, tab, sb);
+                ClassGen(decl as ClassDecl, tab, sb, usings);
             else if (type == typeof(EnumDecl))
                 EnumGen(decl as EnumDecl, tab, sb);
         }
@@ -139,7 +165,7 @@ public class BaseCommand
         }
 
 
-        private void NamespaceGen(NamespaceDecl decl, string tab, StringBuilder sb)
+        private void NamespaceGen(NamespaceDecl decl, string tab, StringBuilder sb, List<string> usings)
         {
             if (decl.bGenerated) return;
             decl.bGenerated = true;
@@ -147,12 +173,12 @@ public class BaseCommand
             sb.AppendLine(tab + "{");
             foreach (var child in decl.Childs)
             {
-                Generate(child, tab + "    ", sb);
+                Generate(child, tab + "    ", sb, usings);
             }
             sb.AppendLine(tab + "}");
         }
 
-        private void StructGen(StructDecl decl, string tab, StringBuilder sb)
+        private void StructGen(StructDecl decl, string tab, StringBuilder sb, List<string> usings)
         {
             if (decl.bGenerated) return;
             decl.bGenerated = true;
@@ -161,16 +187,16 @@ public class BaseCommand
             sb.AppendLine(tab + "{");
             foreach (var child in decl.Childs)
             {
-                Generate(child, tab + "    ", sb);
+                Generate(child, tab + "    ", sb, usings);
             }
             foreach (var mem in decl.Fields)
             {
-                AggregateFieldGen(mem, tab + "    ", sb);
+                AggregateFieldGen(mem, tab + "    ", sb, usings);
             }
             sb.AppendLine(tab + "}");
         }
 
-        private void ClassGen(ClassDecl decl, string tab, StringBuilder sb)
+        private void ClassGen(ClassDecl decl, string tab, StringBuilder sb, List<string> usings)
         {
             if (decl.bGenerated) return;
             decl.bGenerated = true;
@@ -179,11 +205,11 @@ public class BaseCommand
             sb.AppendLine(tab + "{");
             foreach (var child in decl.Childs)
             {
-                Generate(child, tab + "    ", sb);
+                Generate(child, tab + "    ", sb, usings);
             }
             foreach (var mem in decl.Fields)
             {
-                AggregateFieldGen(mem, tab + "    ", sb);
+                AggregateFieldGen(mem, tab + "    ", sb, usings);
             }
             sb.AppendLine(tab + "}");
         }
@@ -204,10 +230,16 @@ public class BaseCommand
             sb.AppendLine(tab + "}");
         }
 
-        private void AggregateFieldGen(AggregateField field, string tab, StringBuilder sb)
+        private void AggregateFieldGen(AggregateField field, string tab, StringBuilder sb, List<string> usings)
         {
             string msg = null;
             var type = Converter.DDLTypeToCSharpType(field.Type, field.sType);
+            if (field.Type == EType.STRUCT || field.Type == EType.SELECT)
+            {
+                if (!usings.Contains(field.sType))
+                    usings.Add(field.sType);
+            }
+                
             if (field.ArrayType == EArrayType.SCALAR)
             {
                 if (string.IsNullOrEmpty(field.Value))

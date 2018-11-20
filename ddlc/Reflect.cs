@@ -1,4 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Text;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace ddlc
 {
@@ -74,6 +77,21 @@ namespace ddlc
             return EType.UNKNOWN;
         }
 
+        public static string BuildNamespaceChain(TypeDeclarationSyntax type)
+        {
+            var sb = new StringBuilder();
+            var parent = type.Parent;
+            while (parent != null)
+            {
+                if (parent is NamespaceDeclarationSyntax)
+                {
+                    var n = parent as NamespaceDeclarationSyntax;
+                    sb.Append(n.Name);
+                }
+                parent = parent.Parent;
+            }
+            return sb.ToString();
+        }
         
         public static string DDLTypeToCSharpType(EType t, string typeName)
         {

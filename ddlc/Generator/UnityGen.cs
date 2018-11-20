@@ -24,6 +24,8 @@ namespace ddlc.Generator
                 GenerateHeader(sb);
                 Generate(n, "", sb);
 
+                Console.WriteLine(sb.ToString());
+                
                 var name = n.Name;
                 name = name.Replace('.', '_');
                 var csfilename = Path.Combine(outputPath, name + "_generated.cs");
@@ -41,8 +43,21 @@ namespace ddlc.Generator
                 GenerateHeader(sb2);
                 foreach (var d in todo)
                     Generate(d, "", sb2);
+                Console.WriteLine(sb2.ToString());
+                
                 var csfilename = Path.Combine(outputPath, "_generated.cs");
                 File.WriteAllText(csfilename, sb2.ToString());
+            }
+
+            if (methodDecls.Count != 0)
+            {
+                var sb3 = new StringBuilder();
+                GenerateHeader(sb3);
+                GenerateCommands(methodDecls, "", sb3);
+                Console.WriteLine(sb3.ToString());
+                
+                var csfilename = Path.Combine(outputPath, "_Commands_generated.cs");
+                File.WriteAllText(csfilename, sb3.ToString());
             }
         }
         

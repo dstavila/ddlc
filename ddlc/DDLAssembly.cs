@@ -105,17 +105,19 @@ namespace ddlc
             {
                 foreach (var d in Decls)
                     d.bGenerated = false;
-                var csfilename = fullFilename + ".cs";
                 var unityGen = new Generator.UnityGen();
-                var sb = new StringBuilder();
-                unityGen.GenerateHeader(sb);
-                foreach (var n in NamespaceDecls)
-                    unityGen.Generate(n, "", sb);
-                foreach (var d in Decls)
-                    unityGen.Generate(d, "", sb);
-                unityGen.GenerateCommands(MethodDecls, "", sb);
-                Console.WriteLine(sb.ToString());
-                File.WriteAllText(csfilename, sb.ToString());
+                unityGen.DoGenerate(ctx.OutputPath, NamespaceDecls, Decls, MethodDecls);
+//                var csfilename = fullFilename + ".cs";
+//                var unityGen = new Generator.UnityGen();
+//                var sb = new StringBuilder();
+//                unityGen.GenerateHeader(sb);
+//                foreach (var n in NamespaceDecls)
+//                    unityGen.Generate(n, "", sb);
+//                foreach (var d in Decls)
+//                    unityGen.Generate(d, "", sb);
+//                unityGen.GenerateCommands(MethodDecls, "", sb);
+//                Console.WriteLine(sb.ToString());
+//                File.WriteAllText(csfilename, sb.ToString());
             }
 
             if (string.IsNullOrEmpty(ctx.language) || ctx.language == "cpp")

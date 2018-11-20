@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
+using System.IO;
 using System.Text;
 
 
@@ -9,6 +10,41 @@ namespace ddlc.Generator
     public class UnityGen
     {
         private const string t1 = "    ";
+
+
+        public void DoGenerate(
+            string outputPath,
+            List<NamespaceDecl> namespaceDecls, 
+            List<DDLDecl> decls,
+            List<MethodDecl> methodDecls)
+        {
+            foreach (var n in namespaceDecls)
+            {
+                var sb = new StringBuilder();
+                GenerateHeader(sb);
+                Generate(n, "", sb);
+
+                var name = n.Name;
+                name = name.Replace('.', '_');
+                var csfilename = Path.Combine(outputPath, name + "_generated.cs");
+                File.WriteAllText(csfilename, sb.ToString());
+            }
+
+            var todo = new List<DDLDecl>();
+            foreach (var d in decls)
+                if (d.bGenerated == false)
+                    todo.Add(d);
+
+            if (todo.Count != 0)
+            {
+                var sb2 = new StringBuilder();
+                GenerateHeader(sb2);
+                foreach (var d in todo)
+                    Generate(d, "", sb2);
+                var csfilename = Path.Combine(outputPath, "_generated.cs");
+                File.WriteAllText(csfilename, sb2.ToString());
+            }
+        }
         
         
         public void GenerateHeader(StringBuilder sb)

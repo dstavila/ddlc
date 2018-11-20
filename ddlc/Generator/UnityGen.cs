@@ -48,6 +48,7 @@ namespace ddlc.Generator
                 name = name.Replace('.', '_');
                 var csfilename = Path.Combine(outputPath, name + "_generated.cs");
                 File.WriteAllText(csfilename, outer.ToString());
+                Utils.Dos2Unix(csfilename);
             }
 
             var todo = new List<DDLDecl>();
@@ -69,6 +70,7 @@ namespace ddlc.Generator
 
                 var csfilename = Path.Combine(outputPath, "_generated.cs");
                 File.WriteAllText(csfilename, outer.ToString());
+                Utils.Dos2Unix(csfilename);
             }
 
             if (methodDecls.Count != 0)
@@ -85,6 +87,7 @@ namespace ddlc.Generator
                 
                 var csfilename = Path.Combine(outputPath, "_Commands_generated.cs");
                 File.WriteAllText(csfilename, outer.ToString());
+                Utils.Dos2Unix(csfilename);
             }
         }
 

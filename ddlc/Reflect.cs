@@ -77,6 +77,21 @@ namespace ddlc
             return EType.UNKNOWN;
         }
 
+        public static string BuildNamespaceChain(EnumDeclarationSyntax node)
+        {
+            var sb = new StringBuilder();
+            var parent = node.Parent;
+            while (parent != null)
+            {
+                if (parent is NamespaceDeclarationSyntax)
+                {
+                    var n = parent as NamespaceDeclarationSyntax;
+                    sb.Append(n.Name);
+                }
+                parent = parent.Parent;
+            }
+            return sb.ToString();
+        }
         public static string BuildNamespaceChain(MethodDeclarationSyntax node)
         {
             var sb = new StringBuilder();

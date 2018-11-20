@@ -73,13 +73,18 @@ namespace ddlc.Generator
 
             if (methodDecls.Count != 0)
             {
+                var fields = new List<string>();
                 var sb3 = new StringBuilder();
-                GenerateHeader(sb3, null);
-                GenerateCommands(methodDecls, "", sb3);
+                GenerateCommands(methodDecls, "", sb3, fields);
                 Console.WriteLine(sb3.ToString());
                 
+                var usings = nodes_to_using_strings(fields, asm);
+                var outer = new StringBuilder();
+                GenerateHeader(outer, usings);
+                outer.Append(sb3);
+                
                 var csfilename = Path.Combine(outputPath, "_Commands_generated.cs");
-                File.WriteAllText(csfilename, sb3.ToString());
+                File.WriteAllText(csfilename, outer.ToString());
             }
         }
 
@@ -115,7 +120,7 @@ namespace ddlc.Generator
                 EnumGen(decl as EnumDecl, tab, sb);
         }
 
-        public void GenerateCommands(List<MethodDecl> decls, string tab, StringBuilder sb)
+        public void GenerateCommands(List<MethodDecl> decls, string tab, StringBuilder sb, List<string> fields)
         {
             sb.AppendLine(tab + "namespace DDL");
             sb.AppendLine(tab + "{");
@@ -124,8 +129,12 @@ namespace ddlc.Generator
             sb.AppendFormat(tab + t1 + t1 + "kUnknown = 0,\n");
             foreach (var f in decls)
             {
-                var item = $"ECommands.{f.Name}";
-                sb.AppendFormat(tab + t1 + t1 + "{0} = {1},\n", f.Name, MurmurHash2.Hash(item));
+                var name = f.Name;
+                var extra = Utils.ExtraCommandNamespace(f.NamespaceChain);
+                if (extra != null)
+                    name = string.Format("{0}_{1}", extra, f.Name);
+                var item = $"ECommands.{name}";
+                sb.AppendFormat(tab + t1 + t1 + "{0} = {1},\n", name, MurmurHash2.Hash(item));
             }
             sb.AppendLine(tab + t1 + "}");
             var base_cmd_str = @"
@@ -155,13 +164,13 @@ namespace ddlc.Generator
             {
                 sb.AppendFormat("namespace {0}\n", kvp.Key);
                 sb.AppendLine("{");
-                dump_methods_into_namespace(kvp.Value, tab + t1, sb);
+                dump_methods_into_namespace(kvp.Value, tab + t1, sb, fields);
                 sb.AppendLine("}");
             }
-            dump_methods_into_namespace(nonamespace, tab, sb);
+            dump_methods_into_namespace(nonamespace, tab, sb, fields);
         }
 
-        private static void dump_methods_into_namespace(List<MethodDecl> decls, string tab, StringBuilder sb)
+        private static void dump_methods_into_namespace(List<MethodDecl> decls, string tab, StringBuilder sb, List<string> fields)
         {
             foreach (var decl in decls)
             {
@@ -171,12 +180,16 @@ namespace ddlc.Generator
                 foreach (var p in decl.Params)
                 {
                     sb.AppendFormat(tab + t1 + "public {0} {1};\n", p.sType, p.Name);
+                    if (!fields.Contains(p.sType))
+                        fields.Add(p.sType);
                 }
 
                 sb.AppendFormat(tab + t1 + "public {0}()\n", decl.Name);
                 sb.AppendLine(tab + t1 + "{");
                 sb.AppendFormat(tab + t1 + t1 + "Id = ECommands.{0};\n", decl.Name);
                 sb.AppendFormat(tab + t1 + t1 + "Name = \"ECommands.{0}\";\n", decl.Name);
+                if (decl.TotalSteps != 1)
+                    sb.AppendFormat(tab + t1 + t1 + "TotalSteps = {0};\n", decl.TotalSteps);
                 sb.AppendLine(tab + t1 + "}");
 
                 if (decl.Params.Count > 0)
@@ -204,6 +217,8 @@ namespace ddlc.Generator
                         sb.AppendFormat(tab + t1 + t1 + "{0} = _{1};\n", p.Name, p.Name);
                     sb.AppendFormat(tab + t1 + t1 + "Id = ECommands.{0};\n", decl.Name);
                     sb.AppendFormat(tab + t1 + t1 + "Name = \"ECommands.{0}\";\n", decl.Name);
+                    if (decl.TotalSteps != 1)
+                        sb.AppendFormat(tab + t1 + t1 + "TotalSteps = {0};\n", decl.TotalSteps);
                     sb.AppendLine(tab + t1 + "}");
                 }
 

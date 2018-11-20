@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace ddlc
 {
     public static class Utils
@@ -15,6 +17,28 @@ namespace ddlc
             if (decl.Parent == null)
                 return decl.Name;
             return BuildNamespace(decl.Parent) + "::" + decl.Name;
+        }
+
+        public static string ExtraCommandNamespace(string space)
+        {
+            var list = space.Split('.');
+            if (list.Length > 2)
+            {
+                if (list[0] == "DDL" && list[1] == "Commands")
+                {
+                    var sb = new StringBuilder();
+                    var len = list.Length; 
+                    for (var i = 2; i < len - 1; ++i)
+                    {
+                        sb.Append(list[i]);
+                        sb.Append("_");
+                    }
+                    sb.Append(list[len - 1]);
+                    return sb.ToString();
+                }
+                return null;
+            }
+            return null;
         }
     }
 }

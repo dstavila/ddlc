@@ -22,6 +22,7 @@ namespace ddlc
             Node = node;
             sNode = Node;
             sParentNode = node.Parent;
+            NamespaceChain = Converter.BuildNamespaceChain(node);
         }
         public override void ParseDecl()
         {

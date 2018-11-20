@@ -75,7 +75,21 @@ namespace ddlc
                     var id = name.Identifier;
                     if (id.Text == "Command")
                     {
-                        var decl = new MethodDecl(node);
+                        var decl = new MethodDecl(node, 1);
+                        decl.SourceFilepath = _sourceFile;
+                        _assembly.AppendMethod(decl);
+                    }
+                    else if (id.Text == "CommandAttribute")
+                    {
+                        var steps = 0;
+                        foreach (var arg in attr.ArgumentList.Arguments)
+                        {
+                            if (arg.NameEquals.Name.ToString() == "Steps")
+                            {
+                                int.TryParse(arg.Expression.ToString(), out steps);
+                            }
+                        }
+                        var decl = new MethodDecl(node, steps);
                         decl.SourceFilepath = _sourceFile;
                         _assembly.AppendMethod(decl);
                     }

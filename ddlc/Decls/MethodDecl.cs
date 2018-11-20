@@ -9,14 +9,16 @@ namespace ddlc
     {
         public List<AggregateField> Params = new List<AggregateField>();
         private MethodDeclarationSyntax Node;
+        public int TotalSteps = 1;
         
-        public MethodDecl(MethodDeclarationSyntax node)
+        public MethodDecl(MethodDeclarationSyntax node, int totalSteps)
         {
             Node = node;
             sNode = Node;
             sParentNode = node.Parent;
             Name = Node.Identifier.Text;
             NamespaceChain = Converter.BuildNamespaceChain(node);
+            TotalSteps = totalSteps;
         }
 
         public override void ParseDecl() { }

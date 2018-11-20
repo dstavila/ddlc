@@ -22,5 +22,12 @@ namespace ddl
 
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class CommandAttribute : Attribute
-    { }
+    {
+        public int Steps = 1;
+
+        public CommandAttribute(int steps = 1)
+        {
+            Steps = steps;
+        }
+    }
 }

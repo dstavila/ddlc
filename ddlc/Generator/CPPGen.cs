@@ -33,7 +33,7 @@ namespace ddlc.Generator
             Utils.Dos2Unix(fwdpath + ".h");
             
             var sbh = new StringBuilder();
-            GenerateHeader(sbh, namespaces, decls);
+            GenerateHeader(sbh, ctx.OutputName + "_fwd_generated.h", namespaces, decls);
             Console.WriteLine(sbh.ToString());
             File.WriteAllText(fullFilename + ".h", sbh.ToString());
             Utils.Dos2Unix(fullFilename + ".h");
@@ -57,6 +57,7 @@ namespace ddlc.Generator
 //===----------------------------------------------------------------------===//
 #ifndef DDL_FORWARDDECL_GENERATED_H
 #define DDL_FORWARDDECL_GENERATED_H
+#include <stdint.h>
 ";
             sb.Append(header);
             sb.Append("\n\n");
@@ -64,9 +65,10 @@ namespace ddlc.Generator
             sb.AppendLine("/// Forward declarations");
             sb.AppendLine("/// ----------------------------------------");
             CPPFwdDeclGen.Generate(sb, namespaces, decls);
+            sb.AppendLine("#endif");
         }
         
-        private void GenerateHeader(StringBuilder sb, List<NamespaceDecl> namespaces, List<DDLDecl> decls)
+        private void GenerateHeader(StringBuilder sb, string headerFilename, List<NamespaceDecl> namespaces, List<DDLDecl> decls)
         {
             var header = 
 @"//===----------------------------------------------------------------------===//
@@ -78,11 +80,13 @@ namespace ddlc.Generator
 //===----------------------------------------------------------------------===//
 #ifndef DDL_GENERATED_H
 #define DDL_GENERATED_H
+#include <__FILENAME__>
 #include <stdint.h>
 #include <iosfwd>
 #include <vector>
 #include <string>
 ";
+            header = header.Replace("__FILENAME__", headerFilename);
             sb.Append(header);
             sb.Append("\n\n");
             CPPHeaderGen.Generate(sb, namespaces, decls);

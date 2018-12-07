@@ -149,16 +149,16 @@ namespace ddlc
         
         public static string DDLTypeToCPPType(EType t, string typeName)
         {
-            if (t == EType.UINT8)  return "u8";
-            if (t == EType.UINT16) return "u16";
-            if (t == EType.UINT32) return "u32";
-            if (t == EType.UINT64) return "u64";
-            if (t == EType.INT8)  return "i8";
-            if (t == EType.INT16) return "i16";
-            if (t == EType.INT32) return "i32";
-            if (t == EType.INT64) return "i64";
-            if (t == EType.FLOAT32) return "f32";
-            if (t == EType.FLOAT64) return "f64";
+            if (t == EType.UINT8)  return "uint8_t";
+            if (t == EType.UINT16) return "uint16_t";
+            if (t == EType.UINT32) return "uint32_t";
+            if (t == EType.UINT64) return "uint64_t";
+            if (t == EType.INT8)  return "int8_t";
+            if (t == EType.INT16) return "int16_t";
+            if (t == EType.INT32) return "int32_t";
+            if (t == EType.INT64) return "int64_t";
+            if (t == EType.FLOAT32) return "float";
+            if (t == EType.FLOAT64) return "double";
             if (t == EType.STRING) return "std::string";
             if (t == EType.BOOLEAN) return "bool";
             if (t == EType.VECTOR2) return "float2";

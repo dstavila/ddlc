@@ -22,6 +22,7 @@ namespace ddlc
         public bool bGenerated = false;
         public bool bHeaderGenerated = false;
         public bool bSourceGenerated = false;
+        public bool bFwdDeclared = false;
         public List<DDLDecl> Childs = new List<DDLDecl>();
         
         public string NamespaceChain = null;
@@ -60,10 +61,10 @@ namespace ddlc
             ClassDecls.Add(decl);
             Decls.Add(decl);
         }
-        public void AppendStruct(StructDecl decl)
+        public void AppendStruct(StructDecl aggregateDecl)
         {
-            StructDecls.Add(decl);
-            Decls.Add(decl);
+            StructDecls.Add(aggregateDecl);
+            Decls.Add(aggregateDecl);
         }
         public void AppendEnum(EnumDecl decl)
         {
@@ -131,10 +132,14 @@ namespace ddlc
                 var sbh = new StringBuilder();
                 cppGen.GenerateHeader(sbh, NamespaceDecls, Decls);
                 Console.WriteLine(sbh.ToString());
+                File.WriteAllText(fullFilename + ".h", sbh.ToString());
+                Utils.Dos2Unix(fullFilename + ".h");
                 
                 var sbs = new StringBuilder();
                 cppGen.GenerateSource(sbs, headerFile ,NamespaceDecls, Decls);
                 Console.WriteLine(sbs.ToString());
+                File.WriteAllText(fullFilename + ".cpp", sbs.ToString());
+                Utils.Dos2Unix(fullFilename + ".cpp");
             }
         }
         
@@ -172,60 +177,82 @@ namespace ddlc
             {
                 var rr = node as StructDeclarationSyntax;
                 nodeName = rr.Identifier.ToString();
+                foreach (var d in Decls)
+                {
+                    if (d.sNode.Kind() == SyntaxKind.StructDeclaration)
+                    {
+                        var ds = d.sNode as StructDeclarationSyntax;
+                        if (nodeName == ds.Identifier.ToString())
+                            return d;
+                    }
+                    if (d.sNode.Kind() == SyntaxKind.ClassDeclaration)
+                    {
+                        var ds = d.sNode as ClassDeclarationSyntax;
+                        if (nodeName == ds.Identifier.ToString())
+                            return d;
+                    }
+                }
             }
             if (kind == SyntaxKind.ClassDeclaration)
             {
                 var rr = node as ClassDeclarationSyntax;
                 nodeName = rr.Identifier.ToString();
+                foreach (var d in Decls)
+                {
+                    if (d.sNode.Kind() == SyntaxKind.StructDeclaration)
+                    {
+                        var ds = d.sNode as StructDeclarationSyntax;
+                        if (nodeName == ds.Identifier.ToString())
+                            return d;
+                    }
+                    if (d.sNode.Kind() == SyntaxKind.ClassDeclaration)
+                    {
+                        var ds = d.sNode as ClassDeclarationSyntax;
+                        if (nodeName == ds.Identifier.ToString())
+                            return d;
+                    }
+                }
             }
             if (kind == SyntaxKind.NamespaceDeclaration)
             {
                 var rr = node as NamespaceDeclarationSyntax;
                 nodeName = rr.Name.ToString();
+                foreach (var d in Decls)
+                {
+                    if (d.sNode.Kind() == SyntaxKind.NamespaceDeclaration)
+                    {
+                        var ds = d.sNode as NamespaceDeclarationSyntax;
+                        if (nodeName == ds.Name.ToString())
+                            return d;
+                    }
+                }
             }
             if (kind == SyntaxKind.EnumDeclaration)
             {
                 var rr = node as EnumDeclarationSyntax;
                 nodeName = rr.Identifier.ToString();
+                foreach (var d in Decls)
+                {
+                    if (d.sNode.Kind() == SyntaxKind.EnumDeclaration)
+                    {
+                        var ds = d.sNode as EnumDeclarationSyntax;
+                        if (nodeName == ds.Identifier.ToString())
+                            return d;
+                    }
+                }
             }
             if (kind == SyntaxKind.MethodDeclaration)
             {
                 var rr = node as MethodDeclarationSyntax;
                 nodeName = rr.Identifier.ToString();
-            }
-            
-            
-            foreach (var d in Decls)
-            {
-                if (d.sNode.Kind() == SyntaxKind.StructDeclaration)
+                foreach (var d in Decls)
                 {
-                    var ds = d.sNode as StructDeclarationSyntax;
-                    if (nodeName == ds.Identifier.ToString())
-                        return d;
-                }
-                if (d.sNode.Kind() == SyntaxKind.ClassDeclaration)
-                {
-                    var ds = d.sNode as ClassDeclarationSyntax;
-                    if (nodeName == ds.Identifier.ToString())
-                        return d;
-                }
-                else if (d.sNode.Kind() == SyntaxKind.NamespaceDeclaration)
-                {
-                    var ds = d.sNode as NamespaceDeclarationSyntax;
-                    if (nodeName == ds.Name.ToString())
-                        return d;
-                }
-                else if (d.sNode.Kind() == SyntaxKind.EnumDeclaration)
-                {
-                    var ds = d.sNode as EnumDeclarationSyntax;
-                    if (nodeName == ds.Identifier.ToString())
-                        return d;
-                }
-                else if (d.sNode.Kind() == SyntaxKind.MethodDeclaration)
-                {
-                    var ds = d.sNode as MethodDeclarationSyntax;
-                    if (nodeName == ds.Identifier.ToString())
-                        return d;
+                    if (d.sNode.Kind() == SyntaxKind.MethodDeclaration)
+                    {
+                        var ds = d.sNode as MethodDeclarationSyntax;
+                        if (nodeName == ds.Identifier.ToString())
+                            return d;
+                    }
                 }
             }
             return null;

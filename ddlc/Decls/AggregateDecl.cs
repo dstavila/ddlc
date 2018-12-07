@@ -15,6 +15,7 @@ namespace ddlc
         public uint Count = 0;
         public string Value;
         public string sType;
+        public string TypeNamespace;
 
         public TypeSyntax TypeSyntax = null;
     }

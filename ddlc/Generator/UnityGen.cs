@@ -240,18 +240,25 @@ namespace ddlc.Generator
             sb.AppendLine(tab + "}");
         }
 
-        private void StructGen(StructDecl decl, string tab, StringBuilder sb, List<string> usings)
+        private void StructGen(StructDecl aggregateDecl, string tab, StringBuilder sb, List<string> usings)
         {
-            if (decl.bGenerated) return;
-            decl.bGenerated = true;
+            if (aggregateDecl.bGenerated) return;
+            aggregateDecl.bGenerated = true;
             sb.AppendLine(tab + "[Serializable]");
-            sb.AppendFormat(tab + "public struct {0}\n", decl.Name);
+            sb.AppendFormat(tab + "public struct {0}\n", aggregateDecl.Name);
             sb.AppendLine(tab + "{");
-            foreach (var child in decl.Childs)
+            foreach (var child in aggregateDecl.Childs)
             {
                 Generate(child, tab + "    ", sb, usings);
             }
-            foreach (var mem in decl.Fields)
+            sb.AppendLine(tab + t1 + "public enum EFields");
+            sb.AppendLine(tab + t1 + "{");
+            foreach (var mem in aggregateDecl.Fields)
+            {
+                sb.AppendFormat(tab + t1 + t1 + "{0},\n", mem.Name);
+            }
+            sb.AppendLine(tab + t1 + "}");
+            foreach (var mem in aggregateDecl.Fields)
             {
                 AggregateFieldGen(mem, tab + "    ", sb, usings);
             }
@@ -265,6 +272,12 @@ namespace ddlc.Generator
             sb.AppendLine(tab + "[Serializable]");
             sb.AppendFormat(tab + "public class {0}\n", decl.Name);
             sb.AppendLine(tab + "{");
+            {
+                sb.AppendLine(tab + t1 + "public enum EFields : uint");
+                sb.AppendLine(tab + t1 + "{");
+                WriteFields(decl, tab + t1 + t1, sb);
+                sb.AppendLine(tab + t1 + "}");
+            }
             foreach (var child in decl.Childs)
             {
                 Generate(child, tab + "    ", sb, usings);
@@ -274,6 +287,27 @@ namespace ddlc.Generator
                 AggregateFieldGen(mem, tab + "    ", sb, usings);
             }
             sb.AppendLine(tab + "}");
+        }
+
+        private void WriteFields(DDLDecl indecl, string tab, StringBuilder sb, string parent = null)
+        {
+            if (indecl is ClassDecl)
+            {
+                var decl = (ClassDecl) indecl;
+                foreach (var mem in decl.Fields)
+                {
+                    if (parent == null)
+                        sb.AppendFormat(tab + "{0} = {1},\n", mem.Name, MurmurHash2.Hash(mem.Name));
+                    else
+                    {
+                        var tmp = string.Format("{0}_{1}", parent, mem.Name);
+                        sb.AppendFormat(tab + "{0} = {1},\n", tmp, MurmurHash2.Hash(tmp));
+                    }
+                }
+//                var newParent = parent == null ? indecl.Name : parent + "." + indecl.Name;
+//                foreach (var child in decl.Childs)
+//                    WriteFields(child, tab, sb, newParent);
+            }
         }
 
         private void EnumGen(EnumDecl decl, string tab, StringBuilder sb)

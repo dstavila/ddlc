@@ -9,9 +9,9 @@ namespace ddlc
         private static string t2 = "        ";
 
 
-        public static void WriteStructJsonDeserialization(string tab, StructDecl decl, List<StructDecl> Structs, StringBuilder sb)
+        public static void WriteStructJsonDeserialization(string tab, StructDecl aggregateDecl, List<StructDecl> Structs, StringBuilder sb)
         {
-            var nspace = Utils.BuildNamespace(decl);
+            var nspace = Utils.BuildNamespace(aggregateDecl);
             sb.AppendFormat(tab + "bool {0}::from_json(const std::string & json, {0} * self)\n", nspace);
             sb.AppendLine(tab + "{");
             sb.AppendLine(tab + t1 + "assert(self != nullptr);");
@@ -19,7 +19,7 @@ namespace ddlc
             sb.AppendLine(tab + t1 + "if (j.empty())");
             sb.AppendLine(tab + t2 + "return false;");
             sb.AppendLine(tab + t1 + "auto it = j.end();");
-            sb.AppendLine(Subobject(tab + t1, decl, "j", "self->", null, Structs, 0, false));
+            sb.AppendLine(Subobject(tab + t1, aggregateDecl, "j", "self->", null, Structs, 0, false));
             sb.AppendLine(tab + t1 + "return true;");
             sb.AppendLine(tab + "}");
         }
@@ -38,14 +38,14 @@ namespace ddlc
             sb.AppendLine(tab + "}");
         }
 
-        private static string Subobject(string tab, StructDecl decl, string parentJson, string self,
+        private static string Subobject(string tab, StructDecl aggregateDecl, string parentJson, string self,
             AggregateField parent, List<StructDecl> Structs, int nestLevel, bool nest = true,
             EArrayType array = EArrayType.SCALAR)
         {
             StringBuilder sb = new StringBuilder();
             if (!nest)
             {
-                foreach (var f in decl.Fields)
+                foreach (var f in aggregateDecl.Fields)
                     sb.Append(Field(tab, f, parentJson, self, Structs, nestLevel + 1));
             }
             else
@@ -61,7 +61,7 @@ namespace ddlc
                     sb.AppendFormat(tab + t1 + t1 + "return false;\n");
                     sb.AppendFormat(tab + t1 + "auto {0} = {1}.value();\n", jsv, jsi);
                     sb.AppendLine(tab + t1 + "{");
-                    foreach (var f in decl.Fields)
+                    foreach (var f in aggregateDecl.Fields)
                         sb.Append(Field(tab + t2, f, jsv, newSelf, Structs, nestLevel + 1));
                     sb.AppendLine(tab + t1 + "}");
                     sb.AppendLine(tab + "}");
@@ -85,7 +85,7 @@ namespace ddlc
                     
                     sb.AppendFormat(tab + t2 + "auto {0} = {1}[{2}];\n", jsval, jsv, itr);
                     string itrSelf = string.Format("{0}{1}[{2}].", self, parent.Name, itr);
-                    foreach (var f in decl.Fields)
+                    foreach (var f in aggregateDecl.Fields)
                         sb.Append(Field(tab + t2, f, jsval, itrSelf, Structs, nestLevel + 1));
                     
                     sb.AppendLine(tab + t1 + "}");
@@ -291,6 +291,7 @@ namespace ddlc
             return "ERROR";
         }
 
+
         private static string field_to_cpp_deserializer_type(AggregateField f)
         {
             var t = f.Type;
@@ -299,29 +300,29 @@ namespace ddlc
                 switch (t)
                 {
                     case EType.UINT8:
-                        return "get<u8>";
+                        return "get<uint8_t>";
                     case EType.UINT16:
-                        return "get<u16>";
+                        return "get<uint16_t>";
                     case EType.UINT32:
-                        return "get<u32>";
+                        return "get<uint32_t>";
                     case EType.UINT64:
-                        return "get<u64>";
+                        return "get<uint64_t>";
                     case EType.INT8:
-                        return "get<i8>";
+                        return "get<int8_t>";
                     case EType.INT16:
-                        return "get<i16>";
+                        return "get<int16_t>";
                     case EType.INT32:
-                        return "get<i32>";
+                        return "get<int32_t>";
                     case EType.INT64:
-                        return "get<i64>";
+                        return "get<int64_t>";
                     case EType.FLOAT32:
-                        return "get<f32>";
+                        return "get<float>";
                     case EType.FLOAT64:
-                        return "get<f64>";
+                        return "get<double>";
                     case EType.SELECT:
-                        return string.Format("get<{0}>", f.sType);
+                        return string.Format("get<{0}>", Utils.TypeWithNamespace(f));
                     case EType.BITFIELD:
-                        return string.Format("get<{0}>", f.sType);
+                        return string.Format("get<{0}>", Utils.TypeWithNamespace(f));
                     case EType.STRING:
                         return "get<std::string>";
                     case EType.BOOLEAN:
@@ -333,25 +334,25 @@ namespace ddlc
                 switch (t)
                 {
                     case EType.UINT8:
-                        return "get<std::vector<u8>>";
+                        return "get<std::vector<uint8_t>>";
                     case EType.UINT16:
-                        return "get<std::vector<u16>>";
+                        return "get<std::vector<uint16_t>>";
                     case EType.UINT32:
-                        return "get<std::vector<u32>>";
+                        return "get<std::vector<uint32_t>>";
                     case EType.UINT64:
-                        return "get<std::vector<u64>>";
+                        return "get<std::vector<uint64_t>>";
                     case EType.INT8:
-                        return "get<std::vector<i8>>";
+                        return "get<std::vector<int8_t>>";
                     case EType.INT16:
-                        return "get<std::vector<i16>>";
+                        return "get<std::vector<int16_t>>";
                     case EType.INT32:
-                        return "get<std::vector<i32>>";
+                        return "get<std::vector<int32_t>>";
                     case EType.INT64:
-                        return "get<std::vector<i64>>";
+                        return "get<std::vector<int64_t>>";
                     case EType.FLOAT32:
-                        return "get<std::vector<f32>>";
+                        return "get<std::vector<float>>";
                     case EType.FLOAT64:
-                        return "get<std::vector<f64>>";
+                        return "get<std::vector<double>>";
                     case EType.SELECT:
                         return string.Format("get<std::vector<{0}>>", f.sType);
                     case EType.BITFIELD:

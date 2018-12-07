@@ -6,21 +6,34 @@ namespace ddlc
 {
     public static class Utils
     {
-        public static string ToCPPNamespace(string name)
+        public static string ToCPPNamespace(string name, ref int nestCount)
         {
             var split = name.Split('.');
             var result = split[0];
             for (var i = 1; i < split.Length; ++i)
                 result += " { " + string.Format("namespace {0}", split[i]);
+            nestCount = split.Length;
             return result;
         }
         public static string BuildNamespace(DDLDecl decl)
         {
+            string result;
             if (decl.Parent == null)
-                return decl.Name;
-            return BuildNamespace(decl.Parent) + "::" + decl.Name;
+                result = decl.Name;
+            else
+                result = BuildNamespace(decl.Parent) + "::" + decl.Name;
+            result = result.Replace(".", "::");
+            return result;
         }
-
+        
+        public static string TypeWithNamespace(AggregateField f)
+        {
+            if (string.IsNullOrEmpty(f.TypeNamespace))
+                return f.sType;
+            var res = f.TypeNamespace + "." + f.sType;
+            return res.Replace(".", "::");
+        }
+        
         public static string ExtraCommandNamespace(string space)
         {
             var list = space.Split('.');

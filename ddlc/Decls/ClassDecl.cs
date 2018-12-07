@@ -35,7 +35,14 @@ namespace ddlc
                 {
                     var ff = f.TypeSyntax as IdentifierNameSyntax;
                     f.sType = ff.Identifier.ToString();
-                    f.Type = EType.STRUCT;
+                    var typeDecl = asm.find_decl_by_name(f.sType);
+                    if (typeDecl is EnumDecl)
+                    {
+                        f.Type = EType.SELECT;
+                        f.TypeNamespace = typeDecl.NamespaceChain;
+                    }
+                    else
+                        f.Type = EType.STRUCT;
                 }
             }
         }

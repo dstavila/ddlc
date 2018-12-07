@@ -31,17 +31,18 @@ namespace ddlc.Generator
 #ifndef DDL_GENERATED_H
 #define DDL_GENERATED_H
 #include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
 #include <iosfwd>
+#include <vector>
+#include <string>
 ";
             sb.Append(header);
             sb.Append("\n\n");
-            foreach (var n in namespaces)
-                Generate(n, "", sb, true);
-            foreach (var d in decls)
-                Generate(d, "", sb, true);
+            sb.AppendLine("/// ----------------------------------------");
+            sb.AppendLine("/// Forward declarations");
+            sb.AppendLine("/// ----------------------------------------");
+            CPPFwdDeclGen.Generate(sb, namespaces, decls);
             sb.Append("\n\n");
+            CPPHeaderGen.Generate(sb, namespaces, decls);
             sb.AppendLine("#endif");
         }
 
@@ -62,32 +63,101 @@ namespace ddlc.Generator
 #include <json.hpp>
 #include <assert.h>
 #include <string.h>
-#include <vector.h>
+#include <vector>
 using json = nlohmann::json;
 ";
             header = header.Replace("__FILENAME__", headerFilename);
             
             sb.Append(header);
             sb.Append("\n\n");
-            foreach (var n in namespaces)
-                Generate(n, "", sb, false);
-            foreach (var d in decls)
-                Generate(d, "", sb, false);
+            CPPSourceGen.Generate(sb, namespaces, decls, ClassDecls, StructDecls);
+//            foreach (var n in namespaces)
+//                Generate(n, "", sb, false, false);
+//            foreach (var d in decls)
+//                Generate(d, "", sb, false, false);
         }
 
-        private void Generate(DDLDecl decl, string tab, StringBuilder sb, bool header)
+        private void Generate(DDLDecl decl, string tab, StringBuilder sb, bool header, bool fwddecl)
         {
             var type = decl.GetType();
+            if (type == typeof(NamespaceDecl))
+                NamespaceGen(decl as NamespaceDecl, tab, sb, header, fwddecl);
             if (type == typeof(StructDecl))
-                StructGen(decl as StructDecl, tab, sb, header);
+                StructGen(decl as StructDecl, tab, sb, header, fwddecl);
             else if (type == typeof(ClassDecl))
-                ClassGen(decl as ClassDecl, tab, sb, header);
+                ClassGen(decl as ClassDecl, tab, sb, header, fwddecl);
             else if (type == typeof(EnumDecl))
-                EnumGen(decl as EnumDecl, tab, sb);
+                EnumGen(decl as EnumDecl, tab, sb, fwddecl);
+        }
+
+        private void NamespaceGen(NamespaceDecl decl, string tab, StringBuilder sb, bool header, bool fwddecl)
+        {
+            if (!fwddecl)
+            {
+                if (header)
+                {
+                    if (decl.bHeaderGenerated) return;
+                    decl.bHeaderGenerated = true;
+                }
+            }
+            if (header)
+            {
+                var nestCount = 0;
+                sb.AppendFormat(tab + "namespace {0}\n", Utils.ToCPPNamespace(decl.Name, ref nestCount));
+                sb.AppendLine(tab + "{");
+                foreach (var child in decl.Childs)
+                {
+                    Generate(child, tab + "    ", sb, header, fwddecl);
+                }
+                for (var i = 0; i < nestCount; ++i)
+                    sb.Append(tab + "};");
+                sb.AppendLine();
+            }
         }
         
-        private void StructGen(StructDecl decl, string tab, StringBuilder sb, bool header)
+        private void StructGen(StructDecl aggregateDecl, string tab, StringBuilder sb, bool header, bool fwddecl)
         {
+            if (fwddecl)
+            {
+                sb.AppendFormat(tab + "struct {0};\n", aggregateDecl.Name);
+                return;
+            }
+            if (header && aggregateDecl.bHeaderGenerated) return;
+            if (header) aggregateDecl.bHeaderGenerated = true;
+            if (!header && aggregateDecl.bSourceGenerated) return;
+            if (!header) aggregateDecl.bSourceGenerated = true;
+            if (header)
+            {
+                sb.AppendFormat(tab + "struct {0}\n", aggregateDecl.Name);
+                sb.AppendLine(tab + "{");
+                foreach (var child in aggregateDecl.Childs)
+                {
+                    Generate(child, tab + t1, sb, header, fwddecl);
+                }
+
+                foreach (var mem in aggregateDecl.Fields)
+                {
+                    AggregateFieldGen(mem, tab + t1, sb);
+                }
+
+                sb.AppendLine();
+                sb.AppendLine(tab + t1 + "// JSON Serialization/Deserialization");
+                sb.AppendFormat(tab + t1 + "static std::string to_json(const {0} * self);\n", aggregateDecl.Name);
+                sb.AppendFormat(tab + t1 + "static bool from_json(const std::string & json, {0} * self);\n", aggregateDecl.Name);
+                sb.AppendLine(tab + "};");
+            }
+            else
+            {
+            }
+        }
+
+        private void ClassGen(ClassDecl decl, string tab, StringBuilder sb, bool header, bool fwddecl)
+        {
+            if (fwddecl)
+            {
+                sb.AppendFormat(tab + "struct {0};\n", decl.Name);
+                return;
+            }
             if (header && decl.bHeaderGenerated) return;
             if (header) decl.bHeaderGenerated = true;
             if (!header && decl.bSourceGenerated) return;
@@ -98,7 +168,7 @@ using json = nlohmann::json;
                 sb.AppendLine(tab + "{");
                 foreach (var child in decl.Childs)
                 {
-                    Generate(child, tab + t1, sb, header);
+                    Generate(child, tab + t1, sb, header, fwddecl);
                 }
 
                 foreach (var mem in decl.Fields)
@@ -114,46 +184,18 @@ using json = nlohmann::json;
             }
             else
             {
-                CPPGenJsonSerialization.WriteStructJsonSerialization(tab, decl, StructDecls, sb);
-                CPPGenJsonDeserialization.WriteStructJsonDeserialization(tab, decl, StructDecls, sb);
+//                CPPGenJsonSerialization.WriteStructJsonSerialization(tab, decl, ClassDecls, sb);
+//                CPPGenJsonDeserialization.WriteStructJsonDeserialization(tab, decl, ClassDecls, sb);
             }
         }
 
-        private void ClassGen(ClassDecl decl, string tab, StringBuilder sb, bool header)
+        private void EnumGen(EnumDecl decl, string tab, StringBuilder sb, bool fwddecl)
         {
-            if (header && decl.bHeaderGenerated) return;
-            if (header) decl.bHeaderGenerated = true;
-            if (!header && decl.bSourceGenerated) return;
-            if (!header) decl.bSourceGenerated = true;
-            if (header)
+            if (fwddecl)
             {
-                sb.AppendFormat(tab + "struct {0}\n", decl.Name);
-                sb.AppendLine(tab + "{");
-                foreach (var child in decl.Childs)
-                {
-                    Generate(child, tab + t1, sb, header);
-                }
-
-                foreach (var mem in decl.Fields)
-                {
-                    AggregateFieldGen(mem, tab + t1, sb);
-                }
-
-                sb.AppendLine();
-                sb.AppendLine(tab + t1 + "// JSON Serialization/Deserialization");
-                sb.AppendFormat(tab + t1 + "static std::string to_json(const {0} * self);\n", decl.Name);
-                sb.AppendFormat(tab + t1 + "static bool from_json(const std::string & json, {0} * self);\n", decl.Name);
-                sb.AppendLine(tab + "};");
+                sb.AppendFormat(tab + "enum class {0} : uint32_t;\n", decl.Name);
+                return;
             }
-            else
-            {
-                CPPGenJsonSerialization.WriteStructJsonSerialization(tab, decl, ClassDecls, sb);
-                CPPGenJsonDeserialization.WriteStructJsonDeserialization(tab, decl, ClassDecls, sb);
-            }
-        }
-
-        private void EnumGen(EnumDecl decl, string tab, StringBuilder sb)
-        {
             if (decl.bGenerated) return;
             decl.bGenerated = true;
             sb.AppendFormat(tab + "enum class {0} : uint32_t\n", decl.Name);

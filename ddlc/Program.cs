@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Xml;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
@@ -11,9 +12,12 @@ namespace ddlc
 {
     public class GeneratorContext
     {
+        public string OutputName;
         public string OutputPath;
         public string SourcePath;
         public string language;
+        public string OutputFilename;
+        public string FullFilepath;
         public DDLAssembly Assembly = new DDLAssembly();
     }
     
@@ -26,6 +30,7 @@ namespace ddlc
             string refArg = Path.Combine(GetExecutingDirectoryName(), "libddl.dll");
             string srcArg = null;
             string outArg = null;
+            string nameArg = null;
             string langArg = null;
             for (int i = 0; i < args.Length; ++i)
             {
@@ -33,6 +38,8 @@ namespace ddlc
                     srcArg = args[i + 1];
                 else if (args[i] == "-out")
                     outArg = args[i + 1];
+                else if (args[i] == "-name")
+                    nameArg = args[i + 1];
                 else if (args[i] == "-lang")
                     langArg = args[i + 1];
             }
@@ -40,6 +47,7 @@ namespace ddlc
             refArg = NormalizePath(refArg);
             srcArg = NormalizePath(srcArg);
             outArg = NormalizePath(outArg);
+            nameArg = NormalizePath(nameArg);
 
 
             if (string.IsNullOrEmpty(srcArg))
@@ -78,7 +86,27 @@ namespace ddlc
 
             ctx.OutputPath = outArg;
             ctx.language = langArg;
-//            ctx.SourcePath = 
+
+            var outAttrib = File.GetAttributes(outArg);
+            if ((outAttrib & FileAttributes.Directory) != FileAttributes.Directory)
+            {
+                Console.WriteLine("[ERROR]: OutputPath should be path, not folder");
+                return;
+            }
+            if (string.IsNullOrEmpty(nameArg))
+            {
+                ctx.OutputName = Path.GetFileName(ctx.OutputPath);
+                var filename = ctx.OutputName + "_generated";
+                ctx.FullFilepath = Path.Combine(ctx.OutputPath, filename);
+                ctx.OutputFilename = filename;
+            }
+            else
+            {
+                ctx.OutputName = nameArg;
+                var filename = nameArg + "_generated";
+                ctx.FullFilepath = Path.Combine(ctx.OutputPath, filename);
+                ctx.OutputFilename = filename;
+            }
 
 
             var references = new List<MetadataReference>();

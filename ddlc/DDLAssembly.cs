@@ -94,52 +94,20 @@ namespace ddlc
         
         public void Generate(GeneratorContext ctx)
         {
-            string filename = null;
-            string fullFilename = null;
-            var attr = File.GetAttributes(ctx.OutputPath);
-            if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
-            {
-                filename = Path.GetFileName(ctx.OutputPath) + "_generated";
-                fullFilename = Path.Combine(ctx.OutputPath, filename);
-            }
-                
             if (string.IsNullOrEmpty(ctx.language) || ctx.language == "cs")
             {
                 foreach (var d in Decls)
                     d.bGenerated = false;
                 var unityGen = new Generator.UnityGen();
                 unityGen.DoGenerate(ctx.OutputPath, NamespaceDecls, Decls, MethodDecls, ctx.Assembly);
-//                var csfilename = fullFilename + ".cs";
-//                var unityGen = new Generator.UnityGen();
-//                var sb = new StringBuilder();
-//                unityGen.GenerateHeader(sb);
-//                foreach (var n in NamespaceDecls)
-//                    unityGen.Generate(n, "", sb);
-//                foreach (var d in Decls)
-//                    unityGen.Generate(d, "", sb);
-//                unityGen.GenerateCommands(MethodDecls, "", sb);
-//                Console.WriteLine(sb.ToString());
-//                File.WriteAllText(csfilename, sb.ToString());
             }
 
             if (string.IsNullOrEmpty(ctx.language) || ctx.language == "cpp")
             {
                 foreach (var d in Decls)
                     d.bGenerated = false;
-                var headerFile = filename + ".h";
-                var sourceFile = filename + ".cpp";
                 var cppGen = new Generator.CPPGen(ClassDecls, StructDecls);
-                var sbh = new StringBuilder();
-                cppGen.GenerateHeader(sbh, NamespaceDecls, Decls);
-                Console.WriteLine(sbh.ToString());
-                File.WriteAllText(fullFilename + ".h", sbh.ToString());
-                Utils.Dos2Unix(fullFilename + ".h");
-                
-                var sbs = new StringBuilder();
-                cppGen.GenerateSource(sbs, headerFile ,NamespaceDecls, Decls);
-                Console.WriteLine(sbs.ToString());
-                File.WriteAllText(fullFilename + ".cpp", sbs.ToString());
-                Utils.Dos2Unix(fullFilename + ".cpp");
+                cppGen.DoGenerate(ctx, NamespaceDecls, Decls);
             }
         }
         

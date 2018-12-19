@@ -48,8 +48,17 @@ namespace ddlc
         public List<StructDecl> StructDecls = new List<StructDecl>();
         public List<EnumDecl> EnumDecls = new List<EnumDecl>();
         public List<MethodDecl> MethodDecls = new List<MethodDecl>();
-        
-        
+
+
+        public bool ContainsNamespace(string name)
+        {
+            foreach (var n in NamespaceDecls)
+            {
+                if (n.Name == name)
+                    return true;
+            }
+            return false;
+        }
 
         public void AppendNamespace(NamespaceDecl decl)
         {
@@ -90,6 +99,32 @@ namespace ddlc
 //                d.ParsePackage();
             foreach (var d in Decls)
                 d.ParseType(this);
+
+
+            bool found;
+            do
+            {
+                found = false;
+                for (var j = 0; j < NamespaceDecls.Count; ++j)
+                {
+                    if (found)
+                        break;
+                    var len = NamespaceDecls.Count;
+                    for (var i = len - 1; i >= 0; --i)
+                    {
+                        if (NamespaceDecls[j] != NamespaceDecls[i] && 
+                            NamespaceDecls[j].Name == NamespaceDecls[i].Name)
+                        {
+                            NamespaceDecls[j].Childs.AddRange(NamespaceDecls[i].Childs);
+                            NamespaceDecls.RemoveAt(i);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            } 
+            while (found);
+            Console.WriteLine(NamespaceDecls.Count);
         }
         
         public void Generate(GeneratorContext ctx)

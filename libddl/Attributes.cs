@@ -19,4 +19,15 @@ namespace ddl
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
     public class ListAttribute : Attribute
     {}
+
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+    public class CommandAttribute : Attribute
+    {
+        public int Steps = 1;
+
+        public CommandAttribute(int steps = 1)
+        {
+            Steps = steps;
+        }
+    }
 }

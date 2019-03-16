@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -10,13 +11,14 @@ namespace ddlc
 {
     public class DDLSyntaxWalker : CSharpSyntaxWalker
     {
-        public List<rNamespace> Namespaces = new List<rNamespace>();
-        public List<rSelect> Selects = new List<rSelect>();
-        public List<rStruct> Structs = new List<rStruct>();
+        private DDLAssembly _assembly;
+        private string _sourceFile;
 
 
-        public DDLSyntaxWalker(Compilation compilation) : base(SyntaxWalkerDepth.StructuredTrivia)
+        public DDLSyntaxWalker(Compilation compilation, string sourceFile, DDLAssembly assembly) : base(SyntaxWalkerDepth.StructuredTrivia)
         {
+            _assembly = assembly;
+            _sourceFile = sourceFile;
         }
 
         public override void VisitEnumDeclaration(EnumDeclarationSyntax node)
@@ -26,178 +28,73 @@ namespace ddlc
             {
                 foreach (var attr in attrList.Attributes)
                 {
-                    IdentifierNameSyntax name = (IdentifierNameSyntax) attr.Name;
-                    SyntaxToken identifier = name.Identifier;
-                    if (identifier.Text == "Select")
+                    var name = (IdentifierNameSyntax) attr.Name;
+                    var id = name.Identifier;
+                    if (id.Text == "Select")
                     {
-                        var seldef = new rSelect();
-                        seldef.Name = node.Identifier.Text;
-                        seldef.NameHash = MurmurHash2.Hash(seldef.Name);
-                        Select.ParseAttributes(attr.ArgumentList, ref seldef);
-                        Select.ParseEnum(node, ref seldef);
-                        Selects.Add(seldef);
+                        var decl = new EnumDecl(node);
+                        decl.SourceFilepath = _sourceFile;
+                        _assembly.AppendEnum(decl);
                     }
                 }
             }
         }
-
-
-        public override void VisitClassDeclaration(ClassDeclarationSyntax node)
-        {
-            var strDef = new rStruct();
-            strDef.Name = node.Identifier.Text;
-            
-            List<string> namespaceChain = new List<string>();
-            BuildFullNamespaceChain(node.Parent, namespaceChain);
-            strDef.Namespace = namespaceChain;
-            
-            foreach (var m in node.Members)
-                ProcessStructOrClass(strDef, m);
-            Structs.Add(strDef);
-            base.VisitClassDeclaration(node);
-        }
-
+        
         public override void VisitStructDeclaration(StructDeclarationSyntax node)
         {
-            var strDef = new rStruct();
-            strDef.Name = node.Identifier.Text;
-            
-            List<string> namespaceChain = new List<string>();
-            BuildFullNamespaceChain(node.Parent, namespaceChain);
-            strDef.Namespace = namespaceChain;
-            
-            foreach (var m in node.Members)
-                ProcessStructOrClass(strDef, m);
-            Structs.Add(strDef);
             base.VisitStructDeclaration(node);
+            var decl = new StructDecl(node);
+            decl.SourceFilepath = _sourceFile;
+            _assembly.AppendStruct(decl);
         }
-
-        private void ProcessStructOrClass(rStruct strDef, MemberDeclarationSyntax member)
+        
+        public override void VisitClassDeclaration(ClassDeclarationSyntax node)
         {
-            if (member is FieldDeclarationSyntax)
-            {
-                var field = new rStructField();
-                Struct.ParseStructField((FieldDeclarationSyntax)member, ref field, Selects, Structs);
-                strDef.Fields.Add(field);
-            }
-            else if (member is ClassDeclarationSyntax)
-            {
-                var node = member as ClassDeclarationSyntax;
-                var newstrDef = new rStruct();
-                newstrDef.Name = node.Identifier.Text;
-
-                List<string> namespaceChain = new List<string>();
-                BuildFullNamespaceChain(node.Parent, namespaceChain);
-                newstrDef.Namespace = namespaceChain;
-
-                foreach (var m in node.Members)
-                    ProcessStructOrClass(newstrDef, m);
-                Structs.Add(newstrDef);
-                strDef.Childs.Add(newstrDef);
-            }
-            else if (member is StructDeclarationSyntax)
-            {
-                var node = member as StructDeclarationSyntax;
-                var newstrDef = new rStruct();
-                newstrDef.Name = node.Identifier.Text;
-
-                List<string> namespaceChain = new List<string>();
-                BuildFullNamespaceChain(node.Parent, namespaceChain);
-                newstrDef.Namespace = namespaceChain;
-
-                foreach (var m in node.Members)
-                    ProcessStructOrClass(newstrDef, m);
-                Structs.Add(newstrDef);
-                strDef.Childs.Add(newstrDef);
-            }
+            base.VisitClassDeclaration(node);
+            var decl = new ClassDecl(node);
+            decl.SourceFilepath = _sourceFile;
+            _assembly.AppendClass(decl);
         }
         
-        private void BuildFullNamespaceChain(SyntaxNode node, List<string> list)
-        {
-            if (node is NamespaceDeclarationSyntax)
-            {
-                var ns = node as NamespaceDeclarationSyntax;
-                list.Add(ns.Name.ToString());
-                BuildFullNamespaceChain(node.Parent, list);
-            }
-            if (node is ClassDeclarationSyntax)
-            {
-                var cls = node as ClassDeclarationSyntax;
-                list.Add(cls.Identifier.Text);
-                BuildFullNamespaceChain(node.Parent, list);
-            }
-        }
-        
-        
-        
-        
-
         public override void VisitNamespaceDeclaration(NamespaceDeclarationSyntax node)
         {
             base.VisitNamespaceDeclaration(node);
-            var namedef = new rNamespace();
-            namedef.Name = node.Name.ToString();
-            for (int i = 0; i < node.Members.Count; ++i)
+            var decl = new NamespaceDecl(node);
+            decl.SourceFilepath = _sourceFile;
+            _assembly.AppendNamespace(decl);
+        }
+
+        public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
+        {
+            base.VisitMethodDeclaration(node);
+            foreach (var attrList in node.AttributeLists)
             {
-                var memb = node.Members[i];
-                if (memb is EnumDeclarationSyntax)
+                foreach (var attr in attrList.Attributes)
                 {
-                    var m = memb as EnumDeclarationSyntax;
-                    if (IsSelectAttribute(m.AttributeLists))
+                    var name = (IdentifierNameSyntax)attr.Name;
+                    var id = name.Identifier;
+                    if (id.Text == "Command")
                     {
-                        namedef.Selects.Add(m.Identifier.ToString());
+                        var decl = new MethodDecl(node, 1);
+                        decl.SourceFilepath = _sourceFile;
+                        _assembly.AppendMethod(decl);
                     }
-//                    else if (IsBitfieldAttribute(m.AttributeLists))
-//                    {
-//                        namedef.Bitfields.Add(m.Identifier.ToString());
-//                    }
-                }
-                else if (memb is ClassDeclarationSyntax)
-                {
-                    var m = memb as ClassDeclarationSyntax;
-                    namedef.Structs.Add(m.Identifier.ToString());
-                }
-                else if (memb is StructDeclarationSyntax)
-                {
-                    var m = memb as StructDeclarationSyntax;
-                    namedef.Structs.Add(m.Identifier.ToString());
-                }
-            }
-
-            Namespaces.Add(namedef);
-            Console.Error.WriteLine(node.Name);
-        }
-
-        private bool IsSelectAttribute(SyntaxList<AttributeListSyntax> attributeList)
-        {
-            foreach (var attrList in attributeList)
-            {
-                foreach (var attr in attrList.Attributes)
-                {
-                    IdentifierNameSyntax name = (IdentifierNameSyntax) attr.Name;
-                    SyntaxToken identifier = name.Identifier;
-                    if (identifier.Text == "Select")
-                        return true;
+                    else if (id.Text == "CommandAttribute")
+                    {
+                        var steps = 0;
+                        foreach (var arg in attr.ArgumentList.Arguments)
+                        {
+                            if (arg.NameEquals.Name.ToString() == "Steps")
+                            {
+                                int.TryParse(arg.Expression.ToString(), out steps);
+                            }
+                        }
+                        var decl = new MethodDecl(node, steps);
+                        decl.SourceFilepath = _sourceFile;
+                        _assembly.AppendMethod(decl);
+                    }
                 }
             }
-
-            return false;
-        }
-
-        private bool IsBitfieldAttribute(SyntaxList<AttributeListSyntax> attributeList)
-        {
-            foreach (var attrList in attributeList)
-            {
-                foreach (var attr in attrList.Attributes)
-                {
-                    IdentifierNameSyntax name = (IdentifierNameSyntax) attr.Name;
-                    SyntaxToken identifier = name.Identifier;
-                    if (identifier.Text == "Bitfield")
-                        return true;
-                }
-            }
-
-            return false;
         }
     }
 }

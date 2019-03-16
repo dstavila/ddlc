@@ -1,33 +1,36 @@
 ﻿using System;
-using System.Text;
 using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Xml;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 
 namespace ddlc
 {
+    public class GeneratorContext
+    {
+        public string OutputName;
+        public string OutputPath;
+        public string SourcePath;
+        public string language;
+        public string OutputFilename;
+        public string FullFilepath;
+        public DDLAssembly Assembly = new DDLAssembly();
+    }
+    
+    
     class Program
     {
         static void Main(string[] args)
         {
-//            args = null;
-//            args = new string[]
-//            {
-//                "-src",
-//                "D:/Bully/rpc-ddl.git/example/PGP.ddl",
-//                "-out",
-//                "D:/Bully/rpc-ddl.git/example/",
-//                "-lang",
-//                "cs"
-//            };
+            var ctx = new GeneratorContext();
             string refArg = Path.Combine(GetExecutingDirectoryName(), "libddl.dll");
             string srcArg = null;
             string outArg = null;
+            string nameArg = null;
             string langArg = null;
             for (int i = 0; i < args.Length; ++i)
             {
@@ -35,6 +38,8 @@ namespace ddlc
                     srcArg = args[i + 1];
                 else if (args[i] == "-out")
                     outArg = args[i + 1];
+                else if (args[i] == "-name")
+                    nameArg = args[i + 1];
                 else if (args[i] == "-lang")
                     langArg = args[i + 1];
             }
@@ -42,6 +47,7 @@ namespace ddlc
             refArg = NormalizePath(refArg);
             srcArg = NormalizePath(srcArg);
             outArg = NormalizePath(outArg);
+            nameArg = NormalizePath(nameArg);
 
 
             if (string.IsNullOrEmpty(srcArg))
@@ -51,7 +57,7 @@ namespace ddlc
             }
 
             var files = new List<string>();
-            FileAttributes attr = File.GetAttributes(srcArg);
+            var attr = File.GetAttributes(srcArg);
             if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
             {
                 if (!Directory.Exists(srcArg))
@@ -66,6 +72,7 @@ namespace ddlc
                 {
                     files.Add(f.FullName);
                 }
+//                ctx.SourcePath = srcArg;
             }
             else
             {
@@ -77,6 +84,30 @@ namespace ddlc
                 files.Add(srcArg);
             }
 
+            ctx.OutputPath = outArg;
+            ctx.language = langArg;
+
+            var outAttrib = File.GetAttributes(outArg);
+            if ((outAttrib & FileAttributes.Directory) != FileAttributes.Directory)
+            {
+                Console.WriteLine("[ERROR]: OutputPath should be path, not folder");
+                return;
+            }
+            if (string.IsNullOrEmpty(nameArg))
+            {
+                ctx.OutputName = Path.GetFileName(ctx.OutputPath);
+                var filename = ctx.OutputName + "_generated";
+                ctx.FullFilepath = Path.Combine(ctx.OutputPath, filename);
+                ctx.OutputFilename = filename;
+            }
+            else
+            {
+                ctx.OutputName = nameArg;
+                var filename = nameArg + "_generated";
+                ctx.FullFilepath = Path.Combine(ctx.OutputPath, filename);
+                ctx.OutputFilename = filename;
+            }
+
 
             var references = new List<MetadataReference>();
             using (var fs = File.OpenRead(refArg))
@@ -86,11 +117,13 @@ namespace ddlc
 
             foreach (var source in files)
             {
-                DoGenerate(references, source, langArg, outArg);
+                ParseDDLSyntax(references, source, ctx);
             }
+
+            DoGenerate(langArg, outArg, ctx);
         }
 
-        private static void DoGenerate(List<MetadataReference> references, string srcArg, string langArg, string outArg)
+        private static void ParseDDLSyntax(List<MetadataReference> references, string srcArg, GeneratorContext ctx)
         {
             var syntaxTrees = new List<SyntaxTree>();
             {
@@ -108,31 +141,18 @@ namespace ddlc
                 references,
                 options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-            DDLSyntaxWalker walker = new DDLSyntaxWalker(compilation);
-            foreach (SyntaxTree tree in syntaxTrees)
+            
+            var walker = new DDLSyntaxWalker(compilation, srcArg, ctx.Assembly);
+            foreach (var tree in syntaxTrees)
             {
                 walker.Visit(tree.GetRoot());
             }
+        }
 
-
-            if (langArg == "cs")
-            {
-                var filename = Path.GetFileNameWithoutExtension(srcArg) + "_generated.cs";
-                UnityGen.Generate(outArg, filename, walker.Namespaces, walker.Selects, walker.Structs);
-            }
-            else if (langArg == "cpp")
-            {
-                var cppfile = Path.GetFileNameWithoutExtension(srcArg) + "_generated";
-                CPPGen.Generate(outArg, cppfile, walker.Namespaces, walker.Selects, walker.Structs);
-            }
-            else
-            {
-                var filename = Path.GetFileNameWithoutExtension(srcArg) + "_generated.cs";
-                UnityGen.Generate(outArg, filename, walker.Namespaces, walker.Selects, walker.Structs);
-                
-                var cppfile = Path.GetFileNameWithoutExtension(srcArg) + "_generated";
-                CPPGen.Generate(outArg, cppfile, walker.Namespaces, walker.Selects, walker.Structs);
-            }
+        private static void DoGenerate(string langArg, string outArg, GeneratorContext ctx)
+        {
+            ctx.Assembly.Resolve();
+            ctx.Assembly.Generate(ctx);
         }
 
         private static string NormalizePath(string path)

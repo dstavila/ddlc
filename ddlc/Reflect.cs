@@ -1,4 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Reflection.Metadata;
+using System.Text;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace ddlc
 {
@@ -36,91 +39,9 @@ namespace ddlc
         MAX,
     }
 
-
-    public class rSelectItem
-    {
-        public string Name;
-        public string Label;
-        public string Description;
-        public uint NameHash;
-        public string Value;
-    }
-
-    public class rSelect
-    {
-        public string Name;
-        public string Label;
-        public string Description;
-        public string Namespace;
-        public uint NameHash;
-        public int DefaultItem;
-        public List<rSelectItem> Items = new List<rSelectItem>();
-    }
-
-
-    public class rStructField
-    {
-        public string Name;
-        public string Label;
-        public string Description;
-        public string TypeName;
-
-        public uint NameHash;
-        public uint Count;
-        public EType Type;
-        public EArrayType ArrayType;
-
-        public string Value;
-    }
-
-    public class rStruct
-    {
-        public uint NameHash;
-        public string Name;
-        public string Description;
-        public List<string> Namespace;
-        public List<rStructField> Fields = new List<rStructField>();
-        public List<rStruct> Childs = new List<rStruct>();
-        
-
-        public string CSharpFullname
-        {
-            get { return build_fullpath("."); }
-        }
-        public string CPPFullname
-        {
-            get { return build_fullpath("::"); }
-        }
-
-        private string build_fullpath(string separator)
-        {
-            if (Namespace.Count == 0)
-                return Name;
-
-            string result = Namespace[0];
-            for (int i = 1; i < Namespace.Count; ++i)
-            {
-                result = string.Format("{0}{2}{1}", result, Namespace[i], separator);
-            }
-
-            result = string.Format("{0}{2}{1}", result, Name, separator);
-            return result;
-        }
-    }
-
-    public class rNamespace
-    {
-        public string Name;
-        public List<string> Selects = new List<string>();
-        public List<string> Structs = new List<string>();
-    }
-
-
     public static class Converter
     {
-        public static EType StringToDDLType(string str,
-            List<rSelect> selects,
-            List<rStruct> structs)
+        public static EType StringToDDLType(string str, DDLAssembly asm)
         {
             if (str == "float" || str == "f32") return EType.FLOAT32;
             if (str == "double" || str == "f64") return EType.FLOAT64;
@@ -138,21 +59,70 @@ namespace ddlc
             if (str == "Quaternion") return EType.Quaternion;
             if (str == "bool") return EType.BOOLEAN;
             if (str == "string") return EType.STRING;
-            foreach (var s in selects)
+            foreach (var s in asm.EnumDecls)
             {
                 if (s.Name == str)
                     return EType.SELECT;
             }
-
-            foreach (var s in structs)
+            foreach (var s in asm.StructDecls)
             {
                 if (s.Name == str)
                     return EType.STRUCT;
             }
-
+            foreach (var s in asm.ClassDecls)
+            {
+                if (s.Name == str)
+                    return EType.STRUCT;
+            }
             return EType.UNKNOWN;
         }
 
+        public static string BuildNamespaceChain(EnumDeclarationSyntax node)
+        {
+            var sb = new StringBuilder();
+            var parent = node.Parent;
+            while (parent != null)
+            {
+                if (parent is NamespaceDeclarationSyntax)
+                {
+                    var n = parent as NamespaceDeclarationSyntax;
+                    sb.Append(n.Name);
+                }
+                parent = parent.Parent;
+            }
+            return sb.ToString();
+        }
+        public static string BuildNamespaceChain(MethodDeclarationSyntax node)
+        {
+            var sb = new StringBuilder();
+            var parent = node.Parent;
+            while (parent != null)
+            {
+                if (parent is NamespaceDeclarationSyntax)
+                {
+                    var n = parent as NamespaceDeclarationSyntax;
+                    sb.Append(n.Name);
+                }
+                parent = parent.Parent;
+            }
+            return sb.ToString();
+        }
+        public static string BuildNamespaceChain(TypeDeclarationSyntax type)
+        {
+            var sb = new StringBuilder();
+            var parent = type.Parent;
+            while (parent != null)
+            {
+                if (parent is NamespaceDeclarationSyntax)
+                {
+                    var n = parent as NamespaceDeclarationSyntax;
+                    sb.Append(n.Name);
+                }
+                parent = parent.Parent;
+            }
+            return sb.ToString();
+        }
+        
         public static string DDLTypeToCSharpType(EType t, string typeName)
         {
             if (t == EType.UINT8)  return "ubyte";
@@ -179,16 +149,16 @@ namespace ddlc
         
         public static string DDLTypeToCPPType(EType t, string typeName)
         {
-            if (t == EType.UINT8)  return "u8";
-            if (t == EType.UINT16) return "u16";
-            if (t == EType.UINT32) return "u32";
-            if (t == EType.UINT64) return "u64";
-            if (t == EType.INT8)  return "i8";
-            if (t == EType.INT16) return "i16";
-            if (t == EType.INT32) return "i32";
-            if (t == EType.INT64) return "i64";
-            if (t == EType.FLOAT32) return "f32";
-            if (t == EType.FLOAT64) return "f64";
+            if (t == EType.UINT8)  return "uint8_t";
+            if (t == EType.UINT16) return "uint16_t";
+            if (t == EType.UINT32) return "uint32_t";
+            if (t == EType.UINT64) return "uint64_t";
+            if (t == EType.INT8)  return "int8_t";
+            if (t == EType.INT16) return "int16_t";
+            if (t == EType.INT32) return "int32_t";
+            if (t == EType.INT64) return "int64_t";
+            if (t == EType.FLOAT32) return "float";
+            if (t == EType.FLOAT64) return "double";
             if (t == EType.STRING) return "std::string";
             if (t == EType.BOOLEAN) return "bool";
             if (t == EType.VECTOR2) return "float2";

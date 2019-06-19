@@ -27,13 +27,13 @@ namespace ddlc.Generator
             var fwdpath = Path.Combine(ctx.OutputPath, ctx.OutputName + "_fwd_generated");
             
             var sbfwd = new StringBuilder();
-            GenerateForwardDeclarations(sbfwd, namespaces, decls);
+            GenerateForwardDeclarations(sbfwd, namespaces, decls, ctx.OutputName);
             Console.WriteLine(sbfwd.ToString());
             File.WriteAllText(fwdpath + ".h", sbfwd.ToString());
             Utils.Dos2Unix(fwdpath + ".h");
             
             var sbh = new StringBuilder();
-            GenerateHeader(sbh, ctx.OutputName + "_fwd_generated.h", namespaces, decls);
+            GenerateHeader(sbh, ctx.OutputName + "_fwd_generated.h", namespaces, decls, ctx.OutputName);
             Console.WriteLine(sbh.ToString());
             File.WriteAllText(fullFilename + ".h", sbh.ToString());
             Utils.Dos2Unix(fullFilename + ".h");
@@ -45,18 +45,18 @@ namespace ddlc.Generator
             Utils.Dos2Unix(fullFilename + ".cpp");
         }
 
-        private void GenerateForwardDeclarations(StringBuilder sb, List<NamespaceDecl> namespaces, List<DDLDecl> decls)
+        private void GenerateForwardDeclarations(StringBuilder sb, List<NamespaceDecl> namespaces, List<DDLDecl> decls, string headerName)
         {
             var header = 
-@"//===----------------------------------------------------------------------===//
+$@"//===----------------------------------------------------------------------===//
 //                                                                              
 //  vim: ft=cpp tw=80                                                           
 //                                                                              
 //  DDL Generated code, do not modify directly.                                 
 //                                                                              
 //===----------------------------------------------------------------------===//
-#ifndef DDL_FORWARDDECL_GENERATED_H
-#define DDL_FORWARDDECL_GENERATED_H
+#ifndef DDL_{headerName.ToUpper()}_FWDDECL_GENERATED_H
+#define DDL_{headerName.ToUpper()}_FWDDECL_GENERATED_H
 #include <stdint.h>
 ";
             sb.Append(header);
@@ -68,18 +68,18 @@ namespace ddlc.Generator
             sb.AppendLine("#endif");
         }
         
-        private void GenerateHeader(StringBuilder sb, string headerFilename, List<NamespaceDecl> namespaces, List<DDLDecl> decls)
+        private void GenerateHeader(StringBuilder sb, string headerFilename, List<NamespaceDecl> namespaces, List<DDLDecl> decls, string headerName)
         {
             var header = 
-@"//===----------------------------------------------------------------------===//
+$@"//===----------------------------------------------------------------------===//
 //                                                                              
 //  vim: ft=cpp tw=80                                                           
 //                                                                              
 //  DDL Generated code, do not modify directly.                                 
 //                                                                              
 //===----------------------------------------------------------------------===//
-#ifndef DDL_GENERATED_H
-#define DDL_GENERATED_H
+#ifndef DDL_{headerName.ToUpper()}_GENERATED_H
+#define DDL_{headerName.ToUpper()}_GENERATED_H
 #include <__FILENAME__>
 #include <stdint.h>
 #include <iosfwd>

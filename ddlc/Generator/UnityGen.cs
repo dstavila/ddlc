@@ -251,13 +251,13 @@ namespace ddlc.Generator
             {
                 Generate(child, tab + "    ", sb, usings);
             }
-            sb.AppendLine(tab + t1 + "public enum EFields");
-            sb.AppendLine(tab + t1 + "{");
-            foreach (var mem in aggregateDecl.Fields)
-            {
-                sb.AppendFormat(tab + t1 + t1 + "{0},\n", mem.Name);
-            }
-            sb.AppendLine(tab + t1 + "}");
+//            sb.AppendLine(tab + t1 + "public enum EFields");
+//            sb.AppendLine(tab + t1 + "{");
+//            foreach (var mem in aggregateDecl.Fields)
+//            {
+//                sb.AppendFormat(tab + t1 + t1 + "{0},\n", mem.Name);
+//            }
+//            sb.AppendLine(tab + t1 + "}");
             foreach (var mem in aggregateDecl.Fields)
             {
                 AggregateFieldGen(mem, tab + "    ", sb, usings);
@@ -273,10 +273,10 @@ namespace ddlc.Generator
             sb.AppendFormat(tab + "public class {0}\n", decl.Name);
             sb.AppendLine(tab + "{");
             {
-                sb.AppendLine(tab + t1 + "public enum EFields : uint");
-                sb.AppendLine(tab + t1 + "{");
-                WriteFields(decl, tab + t1 + t1, sb);
-                sb.AppendLine(tab + t1 + "}");
+//                sb.AppendLine(tab + t1 + "public enum EFields : uint");
+//                sb.AppendLine(tab + t1 + "{");
+//                WriteFields(decl, tab + t1 + t1, sb);
+//                sb.AppendLine(tab + t1 + "}");
             }
             foreach (var child in decl.Childs)
             {

@@ -170,6 +170,29 @@ namespace ddlc
             if (t == EType.STRUCT) return typeName;
             return "ERROR";
         }
+        public static string DDLTypeToQtType(EType t, string typeName)
+        {
+            if (t == EType.UINT8)  return "uint8_t";
+            if (t == EType.UINT16) return "uint16_t";
+            if (t == EType.UINT32) return "uint32_t";
+            if (t == EType.UINT64) return "uint64_t";
+            if (t == EType.INT8)  return "int8_t";
+            if (t == EType.INT16) return "int16_t";
+            if (t == EType.INT32) return "int32_t";
+            if (t == EType.INT64) return "int64_t";
+            if (t == EType.FLOAT32) return "float";
+            if (t == EType.FLOAT64) return "double";
+            if (t == EType.STRING) return "QString";
+            if (t == EType.BOOLEAN) return "bool";
+            if (t == EType.VECTOR2) return "float2";
+            if (t == EType.VECTOR3) return "float3";
+            if (t == EType.VECTOR4) return "float4";
+            if (t == EType.Quaternion) return "Quaternion";
+            if (t == EType.SELECT) return typeName;
+            if (t == EType.BITFIELD) return typeName;
+            if (t == EType.STRUCT) return typeName;
+            return "ERROR";
+        }
 
         public static bool IsPOD(EType t)
         {

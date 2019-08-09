@@ -93,17 +93,21 @@ namespace ddlc
                 Console.WriteLine("[ERROR]: OutputPath should be path, not folder");
                 return;
             }
+
+            var genName = "_generated";
+            if (langArg == "qt")
+                genName = "_Qt_generated";
             if (string.IsNullOrEmpty(nameArg))
             {
                 ctx.OutputName = Path.GetFileName(ctx.OutputPath);
-                var filename = ctx.OutputName + "_generated";
+                var filename = ctx.OutputName + genName;
                 ctx.FullFilepath = Path.Combine(ctx.OutputPath, filename);
                 ctx.OutputFilename = filename;
             }
             else
             {
                 ctx.OutputName = nameArg;
-                var filename = nameArg + "_generated";
+                var filename = nameArg + genName;
                 ctx.FullFilepath = Path.Combine(ctx.OutputPath, filename);
                 ctx.OutputFilename = filename;
             }

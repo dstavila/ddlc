@@ -144,6 +144,14 @@ namespace ddlc
                 var cppGen = new Generator.CPPGen(ClassDecls, StructDecls);
                 cppGen.DoGenerate(ctx, NamespaceDecls, Decls);
             }
+            
+            if (string.IsNullOrEmpty(ctx.language) || ctx.language == "qt")
+            {
+                foreach (var d in Decls)
+                    d.bGenerated = false;
+                var qtGen = new Generator.QtGenerator(ClassDecls, StructDecls);
+                qtGen.DoGenerate(ctx, NamespaceDecls, Decls);
+            }
         }
         
 

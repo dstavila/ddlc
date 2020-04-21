@@ -133,6 +133,14 @@ namespace ddlc
             {
                 foreach (var d in Decls)
                     d.bGenerated = false;
+                var csGen = new Generator.CSharpGen();
+                csGen.DoGenerate(ctx.OutputPath, NamespaceDecls, Decls, MethodDecls, ctx.Assembly);
+            }
+            
+            if (string.IsNullOrEmpty(ctx.language) || ctx.language == "unity")
+            {
+                foreach (var d in Decls)
+                    d.bGenerated = false;
                 var unityGen = new Generator.UnityGen();
                 unityGen.DoGenerate(ctx.OutputPath, NamespaceDecls, Decls, MethodDecls, ctx.Assembly);
             }

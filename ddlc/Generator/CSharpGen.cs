@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis;
 
 namespace ddlc.Generator
 {
-    public class UnityGen
+    public class CSharpGen
     {
         private const string t1 = "    ";
 
@@ -102,7 +102,6 @@ namespace ddlc.Generator
             sb.AppendLine("//===----------------------------------------------------------------------===//");
             sb.AppendLine("using System;");
             sb.AppendLine("using System.Collections.Generic;");
-            sb.AppendLine("using UnityEngine;");
             if (usings != null)
             {
                 foreach (var u in usings)
